@@ -9,11 +9,4 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
-
-  @Get('test')
-  getTest(): Record<string, any> {
-    return {
-      message: 'test',
-    };
-  }
 }
