@@ -9,7 +9,7 @@ import { StorageController } from './storage.controller';
 export class StorageModule {
   static register(): DynamicModule {
     const providers = {
-      provide: 'IStorageService',
+      provide: 'StorageService',
       useClass: process.env.STORAGE_SERVICE === 'vercel_blob' ? VercelService : VercelService,
     };
     return {

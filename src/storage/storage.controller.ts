@@ -4,7 +4,7 @@ import { StorageService } from './storage.interface';
 
 @Controller('storage')
 export class StorageController {
-  constructor(@Inject('IStorageService') private readonly storageService: StorageService) {}
+  constructor(@Inject('StorageService') private readonly storageService: StorageService) {}
 
   @Get()
   index() {
