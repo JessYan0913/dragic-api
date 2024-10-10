@@ -2,12 +2,15 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { VercelService } from './service/vercel/vercel.service';
 import { StorageController } from './storage.controller';
 
-@Module({})
+@Module({
+  controllers: [StorageController],
+  providers: [VercelService],
+})
 export class StorageModule {
-  static register(service: 'S3' | 'Vercel'): DynamicModule {
+  static register(): DynamicModule {
     const providers = {
       provide: 'IStorageService',
-      useClass: service === 'S3' ? VercelService : VercelService,
+      useClass: process.env.STORAGE_SERVICE === 'vercel_blob' ? VercelService : VercelService,
     };
     return {
       module: StorageModule,

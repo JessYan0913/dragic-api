@@ -1,16 +1,20 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Inject, Injectable } from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
 import { put } from '@vercel/blob';
+import storageConfiguration from '../../../config/storage.configuration';
 import { StorageService } from '../../storage.interface';
 
 @Injectable()
 export class VercelService implements StorageService {
-  constructor(private configService: ConfigService) {}
+  constructor(
+    @Inject(storageConfiguration.KEY)
+    private readonly config: ConfigType<typeof storageConfiguration>,
+  ) {}
 
   async upload(file: Express.Multer.File): Promise<string> {
     const result = await put(file.originalname, file.buffer, {
       access: 'public',
-      token: this.configService.get<string>('VERCEL_BLOB_TOKEN'),
+      token: this.config.vercelBlob.token,
       contentType: file.mimetype,
     });
     console.log('result', result);
