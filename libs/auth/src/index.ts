@@ -1,3 +1,5 @@
 export * from './auth.module';
 export * from './auth.service';
-export * from './guard/auth.guard';
+export * from './guards/jwt-auth.guard';
+export * from './guards/local-auth.guard';
+export * from './interfaces/user.interface';

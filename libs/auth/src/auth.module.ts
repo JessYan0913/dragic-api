@@ -1,17 +1,22 @@
-import { Global, Module } from '@nestjs/common';
+import { DynamicModule, Module, Provider } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { LocalStrategy } from './strategies/local.strategy';
 
-@Global()
-@Module({
-  imports: [
-    JwtModule.register({
+@Module({})
+export class AuthModule {
+  static forRoot(userService: Provider): DynamicModule {
+    return {
       global: true,
-      secret: 'secret',
-      signOptions: { expiresIn: '1d' },
-    }),
-  ],
-  providers: [AuthService],
-  exports: [AuthService],
-})
-export class AuthModule {}
+      module: AuthModule,
+      imports: [
+        PassportModule,
+        JwtModule.register({ global: true, secret: 'secret', signOptions: { expiresIn: '1h' } }),
+      ],
+      providers: [userService, AuthService, LocalStrategy, JwtStrategy],
+      exports: [AuthService],
+    };
+  }
+}

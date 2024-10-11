@@ -1,24 +1,14 @@
 import { PrismaService } from '@/prisma/prisma.service';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { AuthService } from '@pictode-api/auth';
+import { Injectable } from '@nestjs/common';
+import { UserService as IUserService } from '@pictode-api/auth';
 import { Prisma, User } from '@prisma/client';
 
 @Injectable()
-export class UserService {
-  constructor(
-    private prisma: PrismaService,
-    private authService: AuthService,
-  ) {}
+export class UserService implements IUserService<User> {
+  constructor(private prisma: PrismaService) {}
 
-  async login(userData: { email: string; password: string }) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: userData.email },
-    });
-    if (!user || user.password !== userData.password) {
-      throw new UnauthorizedException();
-    }
-    const token = this.authService.generateToken({ sub: `${user.id}`, email: user?.email });
-    return token;
+  async findUniqueUserByUsername(username: string): Promise<User | null> {
+    return this.findOne(username);
   }
 
   async findAll() {

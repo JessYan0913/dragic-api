@@ -13,7 +13,7 @@ import { UserService } from './user/user.service';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     StorageModule.forRoot(process.env.STORAGE_SERVICE as Storages),
-    AuthModule,
+    AuthModule.forRoot({ provide: 'UserService', useClass: UserService }),
     PrismaModule,
     UserModule,
     PostModule,
