@@ -84,7 +84,8 @@
       "<rootDir>/libs/"
     ],
     "moduleNameMapper": {
-      "^@pictode-api/storage(|/.*)$": "<rootDir>/libs/storage/src/$1"
+      "^@pictode-api/storage(|/.*)$": "<rootDir>/libs/storage/src/$1",
+      "^@pictode-api/auth(|/.*)$": "<rootDir>/libs/auth/src/$1"
     }
   }
 }

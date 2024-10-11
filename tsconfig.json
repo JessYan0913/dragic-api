@@ -26,6 +26,12 @@
       ],
       "@pictode-api/storage/*": [
         "libs/storage/src/*"
+      ],
+      "@pictode-api/auth": [
+        "libs/auth/src"
+      ],
+      "@pictode-api/auth/*": [
+        "libs/auth/src/*"
       ]
     }
   }
