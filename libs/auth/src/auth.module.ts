@@ -16,7 +16,11 @@ export class AuthModule {
       imports: [
         ConfigModule.forRoot({ load: [authConfiguration] }),
         PassportModule,
-        JwtModule.register({ global: true, secret: process.env.JWT_SECRET, signOptions: { expiresIn: '1h' } }),
+        JwtModule.register({
+          global: true,
+          secret: process.env.JWT_SECRET,
+          signOptions: { expiresIn: process.env.JWT_EXPIRES_IN },
+        }),
       ],
       providers: [userService, AuthService, LocalStrategy, JwtStrategy],
       exports: [AuthService],
