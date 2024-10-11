@@ -9,6 +9,7 @@ import { PostService } from './post/post.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './user/user.module';
 import { UserService } from './user/user.service';
+import { RoleModule } from './role/role.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { UserService } from './user/user.service';
     UserModule,
     PostModule,
     FileModule,
+    RoleModule,
   ],
   providers: [UserService, PostService, { provide: APP_GUARD, useClass: JWTAuthGuard }],
 })
