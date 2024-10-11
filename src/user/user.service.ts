@@ -11,10 +11,6 @@ export class UserService implements IUserService<User> {
     return this.findOne(username);
   }
 
-  async findAll() {
-    return this.prisma.user.findMany();
-  }
-
   async findOne(email: string): Promise<User | null> {
     return this.prisma.user.findUnique({
       where: { email: email },
@@ -39,6 +35,9 @@ export class UserService implements IUserService<User> {
       cursor,
       where,
       orderBy,
+      include: {
+        roles: true,
+      },
     });
   }
 
