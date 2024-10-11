@@ -1,7 +1,9 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
+import authConfiguration from './config/auth.configuration';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 
@@ -12,8 +14,9 @@ export class AuthModule {
       global: true,
       module: AuthModule,
       imports: [
+        ConfigModule.forRoot({ load: [authConfiguration] }),
         PassportModule,
-        JwtModule.register({ global: true, secret: 'secret', signOptions: { expiresIn: '1h' } }),
+        JwtModule.register({ global: true, secret: process.env.JWT_SECRET, signOptions: { expiresIn: '1h' } }),
       ],
       providers: [userService, AuthService, LocalStrategy, JwtStrategy],
       exports: [AuthService],
