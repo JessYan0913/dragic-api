@@ -1,2 +1,2 @@
-export * from './storage.interface';
+export * from './interfaces/storage.interface';
 export * from './storage.module';

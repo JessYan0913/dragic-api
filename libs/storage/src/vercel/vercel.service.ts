@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { put } from '@vercel/blob';
-import storageConfiguration from '../storage.configuration';
-import { Storage } from '../storage.interface';
+import storageConfiguration from '../configs/storage.configuration';
+import { Storage } from '../interfaces/storage.interface';
 
 @Injectable()
 export class VercelService implements Storage {

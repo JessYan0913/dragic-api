@@ -1,6 +1,6 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import storageConfiguration from './storage.configuration';
+import storageConfiguration from './configs/storage.configuration';
 import { VercelService } from './vercel/vercel.service';
 
 const storages = {
