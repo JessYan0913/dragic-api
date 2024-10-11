@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
-import { AuthService, CurrentUser, LocalAuthGuard, SkipAuth } from '@pictode-api/auth';
+import { AuthService, LocalAuthGuard, SkipAuth } from '@pictode-api/auth';
 import { User as UserModel } from '@prisma/client';
 import { UserService } from './user.service';
 
@@ -23,8 +23,7 @@ export class UserController {
   }
 
   @Get('all')
-  async findAll(@CurrentUser() user: UserModel): Promise<UserModel[]> {
-    console.log(user.id, user.age, user.email, user.name);
+  async findAll(): Promise<UserModel[]> {
     return this.userService.findAll();
   }
 }
