@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
-import { AuthService, JWTAuthGuard, LocalAuthGuard } from '@pictode-api/auth';
+import { AuthService, LocalAuthGuard, SkipAuth } from '@pictode-api/auth';
 import { User as UserModel } from '@prisma/client';
 import { UserService } from './user.service';
 
@@ -15,13 +15,13 @@ export class UserController {
     return this.userService.createUser(userData);
   }
 
+  @SkipAuth()
   @UseGuards(LocalAuthGuard)
   @Post('login')
   async login(@Request() req: Express.Request): Promise<any> {
     return this.authService.login(req.user);
   }
 
-  @UseGuards(JWTAuthGuard)
   @Get('all')
   async findAll(@Request() req: Express.AuthenticatedRequest): Promise<UserModel[]> {
     console.log(req.user);

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AuthModule } from '@pictode-api/auth';
+import { APP_GUARD } from '@nestjs/core';
+import { AuthModule, JWTAuthGuard } from '@pictode-api/auth';
 import { StorageModule, Storages } from '@pictode-api/storage';
 import { FileModule } from './file/file.module';
 import { PostModule } from './post/post.module';
@@ -19,6 +20,6 @@ import { UserService } from './user/user.service';
     PostModule,
     FileModule,
   ],
-  providers: [UserService, PostService],
+  providers: [UserService, PostService, { provide: APP_GUARD, useClass: JWTAuthGuard }],
 })
 export class AppModule {}
