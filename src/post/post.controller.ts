@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
-import { Post as PostModel } from '@prisma/client';
+import { CurrentUser } from '@pictode-api/auth';
+import { Post as PostModel, User as UserModel } from '@prisma/client';
 import { PostService } from './post.service';
 
 @Controller('post')
@@ -7,13 +8,16 @@ export class PostController {
   constructor(private readonly postService: PostService) {}
 
   @Post()
-  async createDraft(@Body() postData: { title: string; content?: string; authorEmail: string }): Promise<PostModel> {
-    const { title, content, authorEmail } = postData;
+  async createDraft(
+    @CurrentUser() user: UserModel,
+    @Body() postData: { title: string; content?: string },
+  ): Promise<PostModel> {
+    const { title, content } = postData;
     return this.postService.createPost({
       title,
       content,
       author: {
-        connect: { email: authorEmail },
+        connect: { email: user.email },
       },
     });
   }
