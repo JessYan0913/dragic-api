@@ -1,11 +1,11 @@
 import storageConfiguration from '@/config/storage.configuration';
-import { StorageService } from '@/storage/storage.interface';
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { put } from '@vercel/blob';
+import { Storage } from '../storage.interface';
 
 @Injectable()
-export class VercelService implements StorageService {
+export class VercelService implements Storage {
   constructor(
     @Inject(storageConfiguration.KEY)
     private readonly config: ConfigType<typeof storageConfiguration>,

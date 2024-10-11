@@ -5,6 +5,18 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "assets": [],
-    "watchAssets": true
+    "watchAssets": true,
+    "webpack": true
+  },
+  "projects": {
+    "storage": {
+      "type": "library",
+      "root": "libs/storage",
+      "entryFile": "index",
+      "sourceRoot": "libs/storage/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/storage/tsconfig.lib.json"
+      }
+    }
   }
 }

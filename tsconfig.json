@@ -18,7 +18,15 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "src/*"
+      ],
+      "@pictode-api/storage": [
+        "libs/storage/src"
+      ],
+      "@pictode-api/storage/*": [
+        "libs/storage/src/*"
+      ]
     }
   }
 }
