@@ -1,6 +1,6 @@
-import { PrismaService } from '@/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
 import { UserService as IUserService } from '@pictode-api/auth';
+import { PrismaService } from '@pictode-api/prisma';
 import { Prisma, User } from '@prisma/client';
 
 @Injectable()

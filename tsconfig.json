@@ -32,6 +32,12 @@
       ],
       "@pictode-api/auth/*": [
         "libs/auth/src/*"
+      ],
+      "@pictode-api/prisma": [
+        "libs/prisma/src"
+      ],
+      "@pictode-api/prisma/*": [
+        "libs/prisma/src/*"
       ]
     }
   }

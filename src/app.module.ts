@@ -2,14 +2,14 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule, JWTAuthGuard } from '@pictode-api/auth';
+import { PrismaModule } from '@pictode-api/prisma';
 import { StorageModule, Storages } from '@pictode-api/storage';
 import { FileModule } from './file/file.module';
 import { PostModule } from './post/post.module';
 import { PostService } from './post/post.service';
-import { PrismaModule } from './prisma/prisma.module';
+import { RoleModule } from './role/role.module';
 import { UserModule } from './user/user.module';
 import { UserService } from './user/user.service';
-import { RoleModule } from './role/role.module';
 
 @Module({
   imports: [
