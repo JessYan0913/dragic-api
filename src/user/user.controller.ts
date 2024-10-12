@@ -34,6 +34,13 @@ export class UserController {
 
   @Put('/:id/roles')
   async setRoles(@Param('id') id: string, @Body() { roles }: { roles: string[] }): Promise<User> {
-    return this.userService.setRoles(id, roles);
+    return await this.userService.updateUser({
+      where: { id: Number(id) },
+      data: {
+        roles: {
+          set: roles.map((role) => ({ id: +role })),
+        },
+      },
+    });
   }
 }

@@ -52,23 +52,15 @@ export class UserService implements IUserService<User> {
     return this.prisma.user.update({
       data,
       where,
+      include: {
+        roles: true,
+      },
     });
   }
 
   async deleteUser(where: Prisma.UserWhereUniqueInput): Promise<User> {
     return this.prisma.user.delete({
       where,
-    });
-  }
-
-  async setRoles(userId: string, roleIds: string[]): Promise<User> {
-    return this.prisma.user.update({
-      where: { id: +userId },
-      data: {
-        roles: {
-          set: roleIds.map((id) => ({ id: +id })),
-        },
-      },
     });
   }
 }
