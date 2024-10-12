@@ -60,4 +60,15 @@ export class UserService implements IUserService<User> {
       where,
     });
   }
+
+  async setRoles(userId: string, roleIds: string[]): Promise<User> {
+    return this.prisma.user.update({
+      where: { id: +userId },
+      data: {
+        roles: {
+          set: roleIds.map((id) => ({ id: +id })),
+        },
+      },
+    });
+  }
 }

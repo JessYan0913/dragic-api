@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Post, Put, Request, UseGuards } from '@nestjs/common';
 import { AuthService, LocalAuthGuard, SkipAuth } from '@pictode-api/auth';
-import { User as UserModel } from '@prisma/client';
+import { User } from '@prisma/client';
 import { UserService } from './user.service';
 
 @Controller('user')
@@ -11,7 +11,7 @@ export class UserController {
   ) {}
 
   @Post('signup')
-  async signupUser(@Body() userData: { name?: string; email: string; password: string }): Promise<UserModel> {
+  async signupUser(@Body() userData: { name?: string; email: string; password: string }): Promise<User> {
     return this.userService.createUser(userData);
   }
 
@@ -23,12 +23,17 @@ export class UserController {
   }
 
   @Get('all')
-  async findAll(): Promise<UserModel[]> {
+  async findAll(): Promise<User[]> {
     return this.userService.users({});
   }
 
   @Put('/:id')
-  async updateUser(@Param('id') id: string, @Body() userData: { name?: string; email: string }): Promise<UserModel> {
+  async updateUser(@Param('id') id: string, @Body() userData: { name?: string; email: string }): Promise<User> {
     return this.userService.updateUser({ where: { id: Number(id) }, data: userData });
+  }
+
+  @Put('/:id/roles')
+  async setRoles(@Param('id') id: string, @Body() { roles }: { roles: string[] }): Promise<User> {
+    return this.userService.setRoles(id, roles);
   }
 }
