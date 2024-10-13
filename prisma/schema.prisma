@@ -41,9 +41,23 @@ model Role {
 }
 
 model Permission {
-  id         Int         @default(autoincrement()) @id
-  name       String      @unique
+  id          Int         @default(autoincrement()) @id
+  name        String      @unique
   description String?
-  users      User[]      @relation("UserPermissions")  // 权限与用户的多对多关系
-  roles      Role[]      @relation("RolePermissions")  // 权限与角色的多对多关系
+  resource    String      // 资源路径，对应 API 的路径
+  action      Action      // 动作，表示 API 请求的动作
+  users       User[]      @relation("UserPermissions")  // 权限与用户的多对多关系
+  roles       Role[]      @relation("RolePermissions")  // 权限与角色的多对多关系
+}
+
+enum Action {
+  GET        // 对应 HTTP GET 请求，获取资源
+  POST       // 对应 HTTP POST 请求，创建资源
+  PUT        // 对应 HTTP PUT 请求，更新资源（覆盖）
+  DELETE     // 对应 HTTP DELETE 请求，删除资源
+  PATCH      // 对应 HTTP PATCH 请求，部分更新资源
+  OPTIONS    // 对应 HTTP OPTIONS 请求，获取资源支持的请求方法
+  HEAD       // 对应 HTTP HEAD 请求，获取资源的元数据（不返回响应体）
+  TRACE      // 对应 HTTP TRACE 请求，跟踪请求-响应链
+  CONNECT    // 对应 HTTP CONNECT 请求，用于启动双向的通信通道（通常用于隧道协议）
 }
