@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UserService as IUserService } from '@pictode-api/auth';
 import { PrismaService } from '@pictode-api/prisma';
 import { Prisma, User } from '@prisma/client';
@@ -6,9 +6,20 @@ import { Prisma, User } from '@prisma/client';
 @Injectable()
 export class UserService implements IUserService<User> {
   constructor(private prisma: PrismaService) {}
-
-  async findUniqueUserByUsername(username: string): Promise<User | null> {
-    return this.findOne(username);
+  async validateUser(
+    username: string,
+    password: string,
+  ): Promise<{ id: number; name: string | null; email: string; password: string; age: number | null }> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: username },
+      include: {
+        roles: true,
+      },
+    });
+    if (!user || user.password !== password) {
+      throw new UnauthorizedException();
+    }
+    return user;
   }
 
   async findOne(email: string): Promise<User | null> {
