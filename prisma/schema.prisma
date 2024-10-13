@@ -14,13 +14,14 @@ datasource db {
 }
 
 model User {
-  id      Int      @default(autoincrement()) @id
-  email   String   @unique
-  password String
-  name    String?
-  age     Int?
-  posts   Post[]
-  roles   Role[]   @relation("UserRoles")
+  id         Int         @default(autoincrement()) @id
+  email      String      @unique
+  password   String
+  name       String?
+  age        Int?
+  posts      Post[]
+  roles      Role[]      @relation("UserRoles")
+  permissions Permission[] @relation("UserPermissions")  // 用户与权限的多对多关系
 }
 
 model Post {
@@ -33,7 +34,16 @@ model Post {
 }
 
 model Role {
-  id      Int      @default(autoincrement()) @id
-  name    String   @unique
-  users   User[]   @relation("UserRoles")
+  id         Int        @default(autoincrement()) @id
+  name       String     @unique
+  users      User[]     @relation("UserRoles")    // 角色与用户的多对多关系
+  permissions Permission[] @relation("RolePermissions")  // 角色与权限的多对多关系
+}
+
+model Permission {
+  id         Int         @default(autoincrement()) @id
+  name       String      @unique
+  description String?
+  users      User[]      @relation("UserPermissions")  // 权限与用户的多对多关系
+  roles      Role[]      @relation("RolePermissions")  // 权限与角色的多对多关系
 }
