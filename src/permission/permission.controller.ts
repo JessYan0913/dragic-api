@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { Permission } from '@prisma/client';
 import { PermissionService } from './permission.service';
 
@@ -14,6 +14,11 @@ export class PermissionController {
   @Post()
   async createPermission(@Body() data: Permission): Promise<Permission> {
     return this.permissionService.createPermission(data);
+  }
+
+  @Put('/:id')
+  async updatePermission(@Param('id') id: string, @Body() data: Omit<Permission, 'id'>): Promise<Permission> {
+    return this.permissionService.updatePermission({ where: { id: +id }, data });
   }
 
   @Delete('/:id')

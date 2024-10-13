@@ -26,6 +26,13 @@ export class PermissionService {
     return this.prisma.permission.create({ data });
   }
 
+  async updatePermission(params: {
+    where: Prisma.PermissionWhereUniqueInput;
+    data: Prisma.PermissionUpdateInput;
+  }): Promise<Permission> {
+    return this.prisma.permission.update(params);
+  }
+
   async deletePermission(id: string): Promise<Permission> {
     return this.prisma.permission.delete({ where: { id: +id } });
   }
