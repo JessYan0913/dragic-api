@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UserService as IUserService } from '@pictode-api/auth';
 import { PrismaService } from '@pictode-api/prisma';
 import { Prisma, User } from '@prisma/client';
@@ -17,7 +17,7 @@ export class UserService implements IUserService<User> {
       },
     });
     if (!user || user.password !== password) {
-      throw new UnauthorizedException();
+      return null;
     }
     return user;
   }
