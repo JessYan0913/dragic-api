@@ -140,14 +140,20 @@ export class UserService implements IUserService<User> {
   }
 
   async setPermissions({ userId, permissions }: { userId: string; permissions: string[] }): Promise<User> {
-    return this.prisma.user.update({
+    const userWithUpdatedPermissions = await this.prisma.user.update({
       where: { id: Number(userId) },
       data: {
         permissions: {
           set: permissions.map((permission) => ({ id: +permission })),
         },
       },
+      include: {
+        roles: true,
+        permissions: true,
+      },
     });
+    await this.cacheUser(userWithUpdatedPermissions);
+    return userWithUpdatedPermissions;
   }
 
   // 辅助方法：去重权限
