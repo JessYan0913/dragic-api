@@ -17,13 +17,16 @@ export class RoleController {
   }
 
   @Put('/:id')
-  async update(@Param('id') id: string, @Body() data: { name: string }): Promise<Role> {
-    return await this.roleService.updateRole(
-      {
-        where: { id: Number(id) },
+  async update(@Param('id') id: string, @Body() data: { name: string; permissions: string[] }): Promise<Role> {
+    return await this.roleService.updateRole({
+      where: { id: Number(id) },
+      data: {
+        name: data.name,
+        permissions: {
+          set: data.permissions.map((permission) => ({ id: Number(permission) })),
+        },
       },
-      data,
-    );
+    });
   }
 
   @Delete('/:id')

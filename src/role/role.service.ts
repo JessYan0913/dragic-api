@@ -29,16 +29,14 @@ export class RoleService {
     });
   }
 
-  async updateRole(
-    params: {
-      where: Prisma.RoleWhereUniqueInput;
-    },
-    data: Prisma.RoleUpdateInput,
-  ): Promise<Role> {
-    const { where } = params;
+  async updateRole(params: { where: Prisma.RoleWhereUniqueInput; data: Prisma.RoleUpdateInput }): Promise<Role> {
+    const { where, data } = params;
     return this.prisma.role.update({
       data,
       where,
+      include: {
+        permissions: true,
+      },
     });
   }
 
