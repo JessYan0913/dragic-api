@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CacheService } from './cache.service';
+import { VercelService } from './vercel.service';
 
-describe('CacheService', () => {
-  let service: CacheService;
+describe('VercelService', () => {
+  let service: VercelService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [CacheService],
+      providers: [VercelService],
     }).compile();
 
-    service = module.get<CacheService>(CacheService);
+    service = module.get<VercelService>(VercelService);
   });
 
   it('should be defined', () => {

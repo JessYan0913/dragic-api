@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule, JWTAuthGuard, ResourceAuthGuard } from '@pictode-api/auth';
+import { CacheModule } from '@pictode-api/cache';
 import { PrismaModule } from '@pictode-api/prisma';
 import { StorageModule, Storages } from '@pictode-api/storage';
 import { FileModule } from './file/file.module';
@@ -17,6 +18,7 @@ import { UserService } from './user/user.service';
     ConfigModule.forRoot({ isGlobal: true }),
     StorageModule.forRoot(process.env.STORAGE_SERVICE as Storages),
     AuthModule.forRoot({ provide: 'UserService', useClass: UserService }),
+    CacheModule.forRoot('vercel_kv'),
     PrismaModule,
     UserModule,
     PostModule,

@@ -1,11 +1,17 @@
-import { Injectable } from '@nestjs/common';
-import { UserService as IUserService, ResourcePayload, UserPayload } from '@pictode-api/auth';
+import { Inject, Injectable } from '@nestjs/common';
+import { AuthService, UserService as IUserService, ResourcePayload, UserPayload } from '@pictode-api/auth';
+import { Cache } from '@pictode-api/cache';
 import { PrismaService } from '@pictode-api/prisma';
 import { Prisma, User } from '@prisma/client';
 
 @Injectable()
 export class UserService implements IUserService<User> {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private authService: AuthService,
+    @Inject('Cache')
+    private cache: Cache,
+  ) {}
 
   async canAccess({ id: userId }: UserPayload, permission: ResourcePayload): Promise<boolean> {
     const user = await this.prisma.user.findUnique({
@@ -49,6 +55,28 @@ export class UserService implements IUserService<User> {
       return null;
     }
     return user;
+  }
+
+  async login(user: User) {
+    const { permissions, roles } = await this.prisma.user.findUnique({
+      where: { id: +user.id },
+      include: {
+        permissions: true,
+        roles: {
+          include: {
+            permissions: true,
+          },
+        },
+      },
+    });
+    // 检查用户直接拥有的权限
+    const userPermissions = permissions;
+    // 检查用户通过角色获得的权限
+    const rolePermissions = roles.flatMap((role) => role.permissions);
+    // 合并所有权限
+    const allPermissions = [...userPermissions, ...rolePermissions];
+    this.cache.set(`${user.id}`, allPermissions);
+    return this.authService.login(user);
   }
 
   async user(userWhereUniqueInput: Prisma.UserWhereUniqueInput): Promise<User | null> {

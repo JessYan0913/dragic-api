@@ -1,9 +1,5 @@
 {
-  "moduleFileExtensions": [
-    "js",
-    "json",
-    "ts"
-  ],
+  "moduleFileExtensions": ["js", "json", "ts"],
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
@@ -17,7 +13,7 @@
     "@pictode-api/auth": "<rootDir>/../libs/auth/src",
     "@pictode-api/prisma/(.*)": "<rootDir>/../libs/prisma/src/$1",
     "@pictode-api/prisma": "<rootDir>/../libs/prisma/src",
-    "@pictode-image-api/cache/(.*)": "<rootDir>/../libs/cache/src/$1",
-    "@pictode-image-api/cache": "<rootDir>/../libs/cache/src"
+    "@pictode-api/cache/(.*)": "<rootDir>/../libs/cache/src/$1",
+    "@pictode-api/cache": "<rootDir>/../libs/cache/src"
   }
 }

@@ -18,33 +18,15 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@/*": [
-        "src/*"
-      ],
-      "@pictode-api/storage": [
-        "libs/storage/src"
-      ],
-      "@pictode-api/storage/*": [
-        "libs/storage/src/*"
-      ],
-      "@pictode-api/auth": [
-        "libs/auth/src"
-      ],
-      "@pictode-api/auth/*": [
-        "libs/auth/src/*"
-      ],
-      "@pictode-api/prisma": [
-        "libs/prisma/src"
-      ],
-      "@pictode-api/prisma/*": [
-        "libs/prisma/src/*"
-      ],
-      "@pictode-image-api/cache": [
-        "libs/cache/src"
-      ],
-      "@pictode-image-api/cache/*": [
-        "libs/cache/src/*"
-      ]
+      "@/*": ["src/*"],
+      "@pictode-api/storage": ["libs/storage/src"],
+      "@pictode-api/storage/*": ["libs/storage/src/*"],
+      "@pictode-api/auth": ["libs/auth/src"],
+      "@pictode-api/auth/*": ["libs/auth/src/*"],
+      "@pictode-api/prisma": ["libs/prisma/src"],
+      "@pictode-api/prisma/*": ["libs/prisma/src/*"],
+      "@pictode-api/cache": ["libs/cache/src"],
+      "@pictode-api/cache/*": ["libs/cache/src/*"]
     }
   }
 }
