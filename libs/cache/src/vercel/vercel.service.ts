@@ -5,18 +5,17 @@ import { Cache } from '../interfaces/cache.interface';
 @Injectable()
 export class VercelService implements Cache {
   // 设置缓存
-  async set(key: string, value: any, ttl?: number): Promise<void> {
+  async set<T>(key: string, value: T, ttl?: number): Promise<void> {
     if (ttl) {
-      await kv.set(key, JSON.stringify(value), { ex: ttl });
+      await kv.set<T>(key, value, { ex: ttl });
     } else {
-      await kv.set(key, JSON.stringify(value));
+      await kv.set<T>(key, value);
     }
   }
 
   // 获取缓存
   async get<T>(key: string): Promise<T | null> {
-    const value = await kv.get(key);
-    return value ? JSON.parse(value as string) : null;
+    return await kv.get<T>(key);
   }
 
   // 删除缓存

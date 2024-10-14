@@ -1,47 +1,26 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AuthService, UserService as IUserService, ResourcePayload, UserPayload } from '@pictode-api/auth';
+import { UserService as IUserService, ResourcePayload, UserPayload } from '@pictode-api/auth';
 import { Cache } from '@pictode-api/cache';
 import { PrismaService } from '@pictode-api/prisma';
-import { Prisma, User } from '@prisma/client';
+import { Permission, Prisma, User } from '@prisma/client';
 
 @Injectable()
 export class UserService implements IUserService<User> {
   constructor(
     private prisma: PrismaService,
-    private authService: AuthService,
     @Inject('Cache')
     private cache: Cache,
   ) {}
 
-  async canAccess({ id: userId }: UserPayload, permission: ResourcePayload): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: +userId },
-      include: {
-        permissions: true,
-        roles: {
-          include: {
-            permissions: true,
-          },
-        },
-      },
-    });
-
-    if (!user) return false;
-
-    // 检查用户直接拥有的权限
-    const userPermissions = user.permissions;
-
-    // 检查用户通过角色获得的权限
-    const rolePermissions = user.roles.flatMap((role) => role.permissions);
-
+  async canAccess({ id }: UserPayload, permission: ResourcePayload): Promise<boolean> {
     // 合并所有权限
-    const allPermissions = [...userPermissions, ...rolePermissions];
+    const user = await this.cache.get<User & { permissions: Permission[] }>(`user:${id}`);
 
-    // 创建一个正则表达式来匹配请求的资源
+    // 创建一个正则表达式来匹配请求的资源;
     const requestRegex = new RegExp('^' + permission.resource.replace(/:\w+/g, '[^/]+') + '$');
 
     // 检查是否包含所需的权限
-    return allPermissions.some((p) => p.action === permission.action && requestRegex.test(p.resource));
+    return user.permissions.some((p) => p.action === permission.action && requestRegex.test(p.resource));
   }
 
   async validateUser(username: string, password: string): Promise<User> {
@@ -57,26 +36,30 @@ export class UserService implements IUserService<User> {
     return user;
   }
 
-  async login(user: User) {
-    const { permissions, roles } = await this.prisma.user.findUnique({
-      where: { id: +user.id },
+  async cacheUser({ id }: User) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: +id },
       include: {
         permissions: true,
-        roles: {
-          include: {
-            permissions: true,
-          },
-        },
+        roles: true,
       },
     });
-    // 检查用户直接拥有的权限
-    const userPermissions = permissions;
-    // 检查用户通过角色获得的权限
-    const rolePermissions = roles.flatMap((role) => role.permissions);
-    // 合并所有权限
-    const allPermissions = [...userPermissions, ...rolePermissions];
-    this.cache.set(`${user.id}`, allPermissions);
-    return this.authService.login(user);
+
+    // 缓存用户信息
+    await this.cache.set(`user:${user.id}`, user);
+  }
+
+  private deduplicatePermissions(permissions: Permission[]): Permission[] {
+    const uniquePermissions = new Map<string, Permission>();
+
+    for (const permission of permissions) {
+      const key = `${permission.action}:${permission.resource}`;
+      if (!uniquePermissions.has(key)) {
+        uniquePermissions.set(key, permission);
+      }
+    }
+
+    return Array.from(uniquePermissions.values());
   }
 
   async user(userWhereUniqueInput: Prisma.UserWhereUniqueInput): Promise<User | null> {
