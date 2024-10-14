@@ -17,18 +17,15 @@ export class ResourceAuthGuard implements CanActivate {
     const user = request.user;
 
     if (!user) {
+      if (this.reflector.get(SKIP_AUTH_KEY, context.getHandler())) {
+        return true;
+      }
       throw new UnauthorizedException();
     }
 
-    const skipKeys = this.reflector.getAll(
-      [SKIP_AUTH_KEY, SKIP_RESOURCE_KEY],
-      [context.getHandler(), context.getClass()],
-    );
-
-    if (skipKeys.some(Boolean)) {
+    if (this.reflector.getAllAndOverride(SKIP_RESOURCE_KEY, [context.getHandler(), context.getClass()])) {
       return true;
     }
-
     const requiredPermission = this.getRequiredPermission(context);
     const hasPermission = await this.authService.canAccess(user, requiredPermission);
 
