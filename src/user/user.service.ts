@@ -13,7 +13,7 @@ export class UserService implements IUserService<User> {
   ) {}
 
   async canAccess({ id }: UserPayload, permission: ResourcePayload): Promise<boolean> {
-    // 合并所有权限
+    // 获取用户全部信息
     const user = await this.cache.get<User & { permissions: Permission[] }>(`user:${id}`);
 
     // 创建一个正则表达式来匹配请求的资源;
@@ -23,7 +23,7 @@ export class UserService implements IUserService<User> {
     return user.permissions.some((p) => p.action === permission.action && requestRegex.test(p.resource));
   }
 
-  async validateUser(username: string, password: string): Promise<User> {
+  async validateUser(username: string, password: string): Promise<User | null> {
     const user = await this.prisma.user.findUnique({
       where: { email: username },
       include: {
