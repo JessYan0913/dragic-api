@@ -1,17 +1,27 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { AuthService } from '../auth.service';
+import { SKIP_RESOURCE_KEY } from '../decorators/skip-resource.decorator';
 import { ResourcePayload } from '../interfaces/user.interface';
 
 @Injectable()
 export class ResourceAuthGuard implements CanActivate {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private readonly reflector: Reflector,
+    private authService: AuthService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const user = request.user; // 假设用户信息已经通过之前的认证中间件添加到请求中
+    const user = request.user;
 
     if (!user) {
       throw new UnauthorizedException();
+    }
+
+    // 如果接口被@SkipResource修饰，则直接通过
+    if (this.reflector.getAllAndOverride(SKIP_RESOURCE_KEY, [context.getHandler(), context.getClass()])) {
+      return true;
     }
 
     const requiredPermission = this.getRequiredPermission(context);
