@@ -9,7 +9,7 @@ import { ResourcePayload } from '../interfaces/user.interface';
 export class ResourceAuthGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    private authService: AuthService,
+    private readonly authService: AuthService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

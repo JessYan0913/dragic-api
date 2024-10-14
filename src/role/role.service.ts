@@ -4,7 +4,7 @@ import { Prisma, Role } from '@prisma/client';
 
 @Injectable()
 export class RoleService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async roles(params: {
     skip?: number;

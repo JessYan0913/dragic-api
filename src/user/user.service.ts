@@ -7,9 +7,9 @@ import { Permission, Prisma, User } from '@prisma/client';
 @Injectable()
 export class UserService implements IUserService<User> {
   constructor(
-    private prisma: PrismaService,
+    private readonly prisma: PrismaService,
     @Inject('Cache')
-    private cache: Cache,
+    private readonly cache: Cache,
   ) {}
 
   async canAccess({ id }: UserPayload, permission: ResourcePayload): Promise<boolean> {

@@ -4,7 +4,7 @@ import { Post, Prisma } from '@prisma/client';
 
 @Injectable()
 export class PostService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   findAll() {
     return this.prisma.post.findMany();
