@@ -20,8 +20,9 @@ export class UserController {
   @Post('login')
   async login(@Request() req: Express.Request): Promise<any> {
     const user = req.user as User;
-    this.userService.cacheUser(user);
-    return this.authService.login(user);
+    const { password, ...result } = await this.userService.cacheUser(user);
+    const { accessToken } = await this.authService.login(user);
+    return { accessToken, user: result };
   }
 
   @Get('all')

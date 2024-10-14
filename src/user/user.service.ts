@@ -36,7 +36,7 @@ export class UserService implements IUserService<User> {
     return user;
   }
 
-  async cacheUser({ id }: User) {
+  async cacheUser({ id }: User): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { id: +id },
       include: {
@@ -47,6 +47,7 @@ export class UserService implements IUserService<User> {
 
     // 缓存用户信息
     await this.cache.set(`user:${user.id}`, user);
+    return user;
   }
 
   async users(params: {

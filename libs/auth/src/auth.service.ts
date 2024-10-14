@@ -23,9 +23,9 @@ export class AuthService {
     return await this.userService.canAccess(user, resource);
   }
 
-  async login(user: UserPayload) {
+  async login(user: UserPayload): Promise<{ accessToken: string }> {
     return {
-      access_token: this.jwtService.sign({ ...user }),
+      accessToken: this.jwtService.sign({ ...user }),
     };
   }
 }
