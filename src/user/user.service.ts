@@ -31,8 +31,11 @@ export class UserService implements IUserService<User> {
     // 合并所有权限
     const allPermissions = [...userPermissions, ...rolePermissions];
 
+    // 创建一个正则表达式来匹配请求的资源
+    const requestRegex = new RegExp('^' + permission.resource.replace(/:\w+/g, '[^/]+') + '$');
+
     // 检查是否包含所需的权限
-    return allPermissions.some((p) => p.action === permission.action && p.resource === permission.resource);
+    return allPermissions.some((p) => p.action === permission.action && requestRegex.test(p.resource));
   }
 
   async validateUser(username: string, password: string): Promise<User> {
