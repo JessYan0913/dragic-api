@@ -1,16 +1,16 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { AuthModule, JWTAuthGuard } from '@pictode-api/auth';
+import { AuthModule, JWTAuthGuard, ResourceAuthGuard } from '@pictode-api/auth';
 import { PrismaModule } from '@pictode-api/prisma';
 import { StorageModule, Storages } from '@pictode-api/storage';
 import { FileModule } from './file/file.module';
+import { PermissionModule } from './permission/permission.module';
 import { PostModule } from './post/post.module';
 import { PostService } from './post/post.service';
 import { RoleModule } from './role/role.module';
 import { UserModule } from './user/user.module';
 import { UserService } from './user/user.service';
-import { PermissionModule } from './permission/permission.module';
 
 @Module({
   imports: [
@@ -24,6 +24,11 @@ import { PermissionModule } from './permission/permission.module';
     RoleModule,
     PermissionModule,
   ],
-  providers: [UserService, PostService, { provide: APP_GUARD, useClass: JWTAuthGuard }],
+  providers: [
+    UserService,
+    PostService,
+    { provide: APP_GUARD, useClass: JWTAuthGuard },
+    { provide: APP_GUARD, useClass: ResourceAuthGuard },
+  ],
 })
 export class AppModule {}

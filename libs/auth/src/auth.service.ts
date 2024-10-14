@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UserPayload, UserService } from './interfaces/user.interface';
+import { ResourcePayload, UserPayload, UserService } from './interfaces/user.interface';
 
 @Injectable()
 export class AuthService {
@@ -16,6 +16,11 @@ export class AuthService {
       return result;
     }
     return null;
+  }
+
+  // 判断用户是否有权限访问资源
+  async canAccess(user: UserPayload, resource: ResourcePayload): Promise<boolean> {
+    return await this.userService.canAccess(user, resource);
   }
 
   async login(user: UserPayload) {

@@ -1,15 +1,41 @@
 import { Injectable } from '@nestjs/common';
-import { UserService as IUserService } from '@pictode-api/auth';
+import { UserService as IUserService, ResourcePayload, UserPayload } from '@pictode-api/auth';
 import { PrismaService } from '@pictode-api/prisma';
 import { Prisma, User } from '@prisma/client';
 
 @Injectable()
 export class UserService implements IUserService<User> {
   constructor(private prisma: PrismaService) {}
-  async validateUser(
-    username: string,
-    password: string,
-  ): Promise<{ id: number; name: string | null; email: string; password: string; age: number | null }> {
+
+  async canAccess({ id: userId }: UserPayload, permission: ResourcePayload): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: +userId },
+      include: {
+        permissions: true,
+        roles: {
+          include: {
+            permissions: true,
+          },
+        },
+      },
+    });
+
+    if (!user) return false;
+
+    // 检查用户直接拥有的权限
+    const userPermissions = user.permissions;
+
+    // 检查用户通过角色获得的权限
+    const rolePermissions = user.roles.flatMap((role) => role.permissions);
+
+    // 合并所有权限
+    const allPermissions = [...userPermissions, ...rolePermissions];
+
+    // 检查是否包含所需的权限
+    return allPermissions.some((p) => p.action === permission.action && p.resource === permission.resource);
+  }
+
+  async validateUser(username: string, password: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { email: username },
       include: {
@@ -20,12 +46,6 @@ export class UserService implements IUserService<User> {
       return null;
     }
     return user;
-  }
-
-  async findOne(email: string): Promise<User | null> {
-    return this.prisma.user.findUnique({
-      where: { email: email },
-    });
   }
 
   async user(userWhereUniqueInput: Prisma.UserWhereUniqueInput): Promise<User | null> {

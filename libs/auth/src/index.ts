@@ -4,4 +4,5 @@ export * from './decorators/current-user.decorator';
 export * from './decorators/public.decorator';
 export * from './guards/jwt-auth.guard';
 export * from './guards/local-auth.guard';
+export * from './guards/resource-auth.guard';
 export * from './interfaces/user.interface';
