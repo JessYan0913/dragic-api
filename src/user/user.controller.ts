@@ -43,4 +43,16 @@ export class UserController {
       },
     });
   }
+
+  @Put('/:id/permissions')
+  async setPermissions(@Param('id') id: string, @Body() { permissions }: { permissions: string[] }): Promise<User> {
+    return this.userService.updateUser({
+      where: { id: Number(id) },
+      data: {
+        permissions: {
+          set: permissions.map((permission) => ({ id: +permission })),
+        },
+      },
+    });
+  }
 }
