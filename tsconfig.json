@@ -38,6 +38,12 @@
       ],
       "@pictode-api/prisma/*": [
         "libs/prisma/src/*"
+      ],
+      "@pictode-image-api/cache": [
+        "libs/cache/src"
+      ],
+      "@pictode-image-api/cache/*": [
+        "libs/cache/src/*"
       ]
     }
   }
