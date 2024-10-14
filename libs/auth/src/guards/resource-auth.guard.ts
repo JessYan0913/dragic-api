@@ -40,7 +40,7 @@ export class ResourceAuthGuard implements CanActivate {
     // 如果没有自定义权限，则使用默认的路径+动作格式
     const request = context.switchToHttp().getRequest();
     const path = request.route.path;
-    const method = request.method.toLowerCase();
+    const method = request.method.toUpperCase();
     return {
       action: method,
       resource: path,
