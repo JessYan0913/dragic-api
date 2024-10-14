@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthService } from '../auth.service';
+import { SKIP_AUTH_KEY } from '../decorators/skip-auth.decorator';
 import { SKIP_RESOURCE_KEY } from '../decorators/skip-resource.decorator';
 import { ResourcePayload } from '../interfaces/user.interface';
 
@@ -19,8 +20,12 @@ export class ResourceAuthGuard implements CanActivate {
       throw new UnauthorizedException();
     }
 
-    // 如果接口被@SkipResource修饰，则直接通过
-    if (this.reflector.getAllAndOverride(SKIP_RESOURCE_KEY, [context.getHandler(), context.getClass()])) {
+    const skipKeys = this.reflector.getAll(
+      [SKIP_AUTH_KEY, SKIP_RESOURCE_KEY],
+      [context.getHandler(), context.getClass()],
+    );
+
+    if (skipKeys.some(Boolean)) {
       return true;
     }
 
