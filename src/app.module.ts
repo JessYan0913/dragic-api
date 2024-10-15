@@ -12,6 +12,7 @@ import { PostService } from './post/post.service';
 import { RoleModule } from './role/role.module';
 import { UserModule } from './user/user.module';
 import { UserService } from './user/user.service';
+import { AccountModule } from './account/account.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { UserService } from './user/user.service';
     FileModule,
     RoleModule,
     PermissionModule,
+    AccountModule,
   ],
   providers: [
     UserService,
