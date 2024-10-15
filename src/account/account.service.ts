@@ -4,8 +4,8 @@ import { AuthService } from '@pictode-api/auth';
 import { PrismaService } from '@pictode-api/prisma';
 import { Prisma, User } from '@prisma/client';
 import { plainToClass } from 'class-transformer';
-import { LoginVo } from './mapper/account.login';
-import { RegistryAccountVo } from './mapper/account.registry';
+import { LoginVo } from './vo/login.vo';
+import { RegistryVo } from './vo/registry.vo';
 
 @Injectable()
 export class AccountService {
@@ -27,9 +27,9 @@ export class AccountService {
     );
   }
 
-  async registry(user: Prisma.UserCreateInput): Promise<RegistryAccountVo> {
+  async registry(user: Prisma.UserCreateInput): Promise<RegistryVo> {
     const userEntity = await this.prisma.user.create({ data: user });
-    return plainToClass(RegistryAccountVo, userEntity, {
+    return plainToClass(RegistryVo, userEntity, {
       excludeExtraneousValues: true,
     });
   }

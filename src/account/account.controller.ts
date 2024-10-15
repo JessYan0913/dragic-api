@@ -2,8 +2,9 @@ import { Body, Controller, Post, Request, UseGuards } from '@nestjs/common';
 import { LocalAuthGuard, SkipAuth } from '@pictode-api/auth';
 import { User } from '@prisma/client';
 import { AccountService } from './account.service';
-import { LoginVo } from './mapper/account.login';
-import { RegistryAccountDTO, RegistryAccountVo } from './mapper/account.registry';
+import { RegistryDTO } from './dto/registry.dto';
+import { LoginVo } from './vo/login.vo';
+import { RegistryVo } from './vo/registry.vo';
 
 @Controller('account')
 export class AccountController {
@@ -11,7 +12,7 @@ export class AccountController {
 
   @SkipAuth()
   @Post('registry')
-  async registry(@Body() userData: RegistryAccountDTO): Promise<RegistryAccountVo> {
+  async registry(@Body() userData: RegistryDTO): Promise<RegistryVo> {
     return this.accountService.registry(userData);
   }
 
