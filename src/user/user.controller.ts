@@ -1,14 +1,15 @@
 import { Body, Controller, Get, Param, Put } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { UserService } from './user.service';
+import { UserListVO } from './vo/user-list.vo';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get('all')
-  async findAll(): Promise<User[]> {
-    return this.userService.users({});
+  async findAll(): Promise<UserListVO> {
+    return await this.userService.users({});
   }
 
   @Put('/:id')

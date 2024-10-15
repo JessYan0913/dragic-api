@@ -3,6 +3,8 @@ import { UserService as IUserService, ResourcePayload, UserPayload } from '@pict
 import { Cache } from '@pictode-api/cache';
 import { PrismaService } from '@pictode-api/prisma';
 import { Permission, Prisma, User } from '@prisma/client';
+import { plainToClass } from 'class-transformer';
+import { UserListVO } from './vo/user-list.vo';
 
 @Injectable()
 export class UserService implements IUserService<User> {
@@ -56,9 +58,9 @@ export class UserService implements IUserService<User> {
     cursor?: Prisma.UserWhereUniqueInput;
     where?: Prisma.UserWhereInput;
     orderBy?: Prisma.UserOrderByWithRelationInput;
-  }): Promise<User[]> {
+  }): Promise<UserListVO> {
     const { skip, take, cursor, where, orderBy } = params;
-    return this.prisma.user.findMany({
+    const users = await this.prisma.user.findMany({
       skip,
       take,
       cursor,
@@ -68,6 +70,7 @@ export class UserService implements IUserService<User> {
         roles: true,
       },
     });
+    return plainToClass(UserListVO, { users });
   }
 
   async updateUser(params: { where: Prisma.UserWhereUniqueInput; data: Prisma.UserUpdateInput }): Promise<User> {
