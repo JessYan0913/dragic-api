@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
-import { AuthModule, JWTAuthGuard, ResourceAuthGuard } from '@pictode-api/auth';
+import { AuthModule } from '@pictode-api/auth';
 import { CacheModule } from '@pictode-api/cache';
 import { PrismaModule } from '@pictode-api/prisma';
 import { StorageModule, Storages } from '@pictode-api/storage';
+import { AccountModule } from './account/account.module';
 import { FileModule } from './file/file.module';
 import { PermissionModule } from './permission/permission.module';
 import { PostModule } from './post/post.module';
@@ -12,13 +12,22 @@ import { PostService } from './post/post.service';
 import { RoleModule } from './role/role.module';
 import { UserModule } from './user/user.module';
 import { UserService } from './user/user.service';
-import { AccountModule } from './account/account.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     StorageModule.forRoot(process.env.STORAGE_SERVICE as Storages),
-    AuthModule.forRoot({ provide: 'UserService', useClass: UserService }),
+    AuthModule.forRoot({
+      userService: UserService,
+      enableJwtGuard: process.env.ENABLE_JWT_GUARD === 'true', // 将字符串转换为布尔值
+      enableResourceGuard: process.env.ENABLE_RESOURCE_GUARD === 'true', // 将字符串转换为布尔值
+      jwt: {
+        secret: process.env.JWT_SECRET,
+        signOptions: {
+          expiresIn: process.env.JWT_EXPIRES_IN,
+        },
+      },
+    }),
     CacheModule.forRoot('vercel_kv'),
     PrismaModule,
     UserModule,
@@ -28,11 +37,6 @@ import { AccountModule } from './account/account.module';
     PermissionModule,
     AccountModule,
   ],
-  providers: [
-    UserService,
-    PostService,
-    { provide: APP_GUARD, useClass: JWTAuthGuard },
-    { provide: APP_GUARD, useClass: ResourceAuthGuard },
-  ],
+  providers: [UserService, PostService],
 })
 export class AppModule {}

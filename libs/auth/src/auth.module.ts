@@ -1,15 +1,28 @@
-import { DynamicModule, Module, Provider } from '@nestjs/common';
+import { DynamicModule, Module, Type } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtModule, JwtSignOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import authConfiguration from './configs/auth.configuration';
+import { JWTAuthGuard } from './guards/jwt-auth.guard';
+import { ResourceAuthGuard } from './guards/resource-auth.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 
+export interface ForRootOptions {
+  jwt: {
+    secret: string;
+    signOptions: JwtSignOptions;
+  };
+  enableJwtGuard: boolean;
+  enableResourceGuard: boolean;
+  userService: Type;
+}
+
 @Module({})
 export class AuthModule {
-  static forRoot(userService: Provider): DynamicModule {
+  static forRoot({ userService, enableJwtGuard, enableResourceGuard, jwt }: ForRootOptions): DynamicModule {
     return {
       global: true,
       module: AuthModule,
@@ -18,11 +31,18 @@ export class AuthModule {
         PassportModule,
         JwtModule.register({
           global: true,
-          secret: process.env.JWT_SECRET,
-          signOptions: { expiresIn: process.env.JWT_EXPIRES_IN },
+          secret: jwt.secret,
+          signOptions: jwt.signOptions,
         }),
       ],
-      providers: [userService, AuthService, LocalStrategy, JwtStrategy],
+      providers: [
+        AuthService,
+        LocalStrategy,
+        JwtStrategy,
+        { provide: 'UserService', useClass: userService },
+        ...(enableJwtGuard ? [{ provide: APP_GUARD, useClass: JWTAuthGuard }] : []),
+        ...(enableResourceGuard ? [{ provide: APP_GUARD, useClass: ResourceAuthGuard }] : []),
+      ],
       exports: [AuthService],
     };
   }
