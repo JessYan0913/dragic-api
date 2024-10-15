@@ -3,7 +3,7 @@ import { ApiCreatedResponse } from '@nestjs/swagger';
 import { LocalAuthGuard, SkipAuth } from '@pictode-api/auth';
 import { User } from '@prisma/client';
 import { AccountService } from './account.service';
-import { RegistryDTO } from './dto/registry.dto';
+import { RegistryDto } from './dto/registry.dto';
 import { LoginVo } from './vo/login.vo';
 import { RegistryVo } from './vo/registry.vo';
 
@@ -17,7 +17,7 @@ export class AccountController {
     type: RegistryVo,
   })
   @Post('registry')
-  async registry(@Body() userData: RegistryDTO): Promise<RegistryVo> {
+  async registry(@Body() userData: RegistryDto): Promise<RegistryVo> {
     return this.accountService.registry(userData);
   }
 
