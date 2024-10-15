@@ -13,7 +13,4 @@ export class RegistryVo {
   @ApiProperty()
   @Expose()
   email: string;
-
-  @ApiProperty()
-  password: string;
 }

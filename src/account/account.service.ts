@@ -18,19 +18,11 @@ export class AccountService {
   async login(user: User): Promise<LoginVo> {
     const userEntity = await this.userService.cacheUser(user);
     const { accessToken } = await this.authService.login(user);
-    return plainToClass(
-      LoginVo,
-      { accessToken, user: userEntity },
-      {
-        excludeExtraneousValues: true,
-      },
-    );
+    return plainToClass(LoginVo, { accessToken, user: userEntity });
   }
 
   async registry(user: Prisma.UserCreateInput): Promise<RegistryVo> {
     const userEntity = await this.prisma.user.create({ data: user });
-    return plainToClass(RegistryVo, userEntity, {
-      excludeExtraneousValues: true,
-    });
+    return plainToClass(RegistryVo, userEntity);
   }
 }
