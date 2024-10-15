@@ -3,6 +3,9 @@ import { Injectable } from '@nestjs/common';
 import { AuthService } from '@pictode-api/auth';
 import { PrismaService } from '@pictode-api/prisma';
 import { Prisma, User } from '@prisma/client';
+import { plainToClass } from 'class-transformer';
+import { LoginVo } from './mapper/account.login';
+import { RegistryAccountVo } from './mapper/account.registry';
 
 @Injectable()
 export class AccountService {
@@ -12,13 +15,22 @@ export class AccountService {
     private readonly authService: AuthService,
   ) {}
 
-  async login(user: User): Promise<{ accessToken: string; user: Omit<User, 'password'> }> {
-    const { password, ...result } = await this.userService.cacheUser(user);
+  async login(user: User): Promise<LoginVo> {
+    const userEntity = await this.userService.cacheUser(user);
     const { accessToken } = await this.authService.login(user);
-    return { accessToken: accessToken, user: result };
+    return plainToClass(
+      LoginVo,
+      { accessToken, user: userEntity },
+      {
+        excludeExtraneousValues: true,
+      },
+    );
   }
 
-  async registry(user: Prisma.UserCreateInput): Promise<User> {
-    return await this.prisma.user.create({ data: user });
+  async registry(user: Prisma.UserCreateInput): Promise<RegistryAccountVo> {
+    const userEntity = await this.prisma.user.create({ data: user });
+    return plainToClass(RegistryAccountVo, userEntity, {
+      excludeExtraneousValues: true,
+    });
   }
 }
