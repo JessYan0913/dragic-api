@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
-export class PermissionVo {
+export class PermissionVO {
   @ApiProperty()
   id: number;
 
@@ -18,7 +18,7 @@ export class PermissionVo {
   description: string;
 }
 
-export class RoleVo {
+export class RoleVO {
   @ApiProperty()
   id: number;
 
@@ -26,7 +26,7 @@ export class RoleVo {
   name: string;
 }
 
-export class UserVo {
+export class UserVO {
   @ApiProperty()
   id: number;
 
@@ -39,20 +39,20 @@ export class UserVo {
   @ApiProperty()
   age?: number;
 
-  @ApiProperty({ type: [PermissionVo] })
-  @Type(() => PermissionVo)
-  permissions: PermissionVo[];
+  @ApiProperty({ type: [PermissionVO] })
+  @Type(() => PermissionVO)
+  permissions: PermissionVO[];
 
-  @ApiProperty({ type: [RoleVo] })
-  @Type(() => RoleVo)
-  roles: RoleVo[];
+  @ApiProperty({ type: [RoleVO] })
+  @Type(() => RoleVO)
+  roles: RoleVO[];
 }
 
-export class LoginVo {
+export class LoginVO {
   @ApiProperty()
   accessToken: string;
 
-  @ApiProperty({ type: UserVo })
-  @Type(() => UserVo)
-  user: UserVo;
+  @ApiProperty({ type: UserVO })
+  @Type(() => UserVO)
+  user: UserVO;
 }

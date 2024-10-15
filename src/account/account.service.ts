@@ -4,8 +4,8 @@ import { AuthService } from '@pictode-api/auth';
 import { PrismaService } from '@pictode-api/prisma';
 import { Prisma, User } from '@prisma/client';
 import { plainToClass } from 'class-transformer';
-import { LoginVo } from './vo/login.vo';
-import { RegistryVo } from './vo/registry.vo';
+import { LoginVO } from './vo/login.vo';
+import { RegistryVO } from './vo/registry.vo';
 
 @Injectable()
 export class AccountService {
@@ -15,14 +15,14 @@ export class AccountService {
     private readonly authService: AuthService,
   ) {}
 
-  async login(user: User): Promise<LoginVo> {
+  async login(user: User): Promise<LoginVO> {
     const userEntity = await this.userService.cacheUser(user);
     const { accessToken } = await this.authService.login(user);
-    return plainToClass(LoginVo, { accessToken, user: userEntity });
+    return plainToClass(LoginVO, { accessToken, user: userEntity });
   }
 
-  async registry(user: Prisma.UserCreateInput): Promise<RegistryVo> {
+  async registry(user: Prisma.UserCreateInput): Promise<RegistryVO> {
     const userEntity = await this.prisma.user.create({ data: user });
-    return plainToClass(RegistryVo, userEntity);
+    return plainToClass(RegistryVO, userEntity);
   }
 }
