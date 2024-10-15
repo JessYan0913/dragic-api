@@ -1,29 +1,28 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import storageConfiguration from './configs/storage.configuration';
 import { VercelService } from './vercel/vercel.service';
 
 const storages = {
   vercel_blob: VercelService,
 };
 
-export type Storages = keyof typeof storages;
+export type ForRootOptions = {
+  service: 'vercel_blob';
+  config: {
+    token: string;
+    baseUrl: string;
+  };
+};
 
 @Global()
-@Module({
-  imports: [ConfigModule.forRoot({ load: [storageConfiguration] })],
-  providers: [VercelService],
-  exports: [VercelService],
-})
+@Module({})
 export class StorageModule {
-  static forRoot(storage: Storages): DynamicModule {
+  static forRoot({ service, config }: ForRootOptions): DynamicModule {
     const providers = {
       provide: 'Storage',
-      useClass: storages[storage],
+      useFactory: () => new storages[service](config),
     };
     return {
       global: true,
-      imports: [ConfigModule],
       module: StorageModule,
       providers: [providers],
       exports: [providers],
