@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
-export class RoleVo {
+export class RoleVO {
   @ApiProperty({ description: '角色 ID' })
   id: number;
 
@@ -13,7 +13,7 @@ export class SetRolesVO {
   @ApiProperty({ description: '用户 ID' })
   id: number;
 
-  @ApiProperty({ type: [RoleVo], description: '用户角色 ID 列表' })
-  @Type(() => RoleVo) // 使用 class-transformer 进行类型映射
-  roles: RoleVo[];
+  @ApiProperty({ type: [RoleVO], description: '用户角色 ID 列表' })
+  @Type(() => RoleVO) // 使用 class-transformer 进行类型映射
+  roles: RoleVO[];
 }
