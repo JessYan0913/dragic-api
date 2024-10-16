@@ -10,7 +10,6 @@ import { AccountModule } from './account/account.module';
 import { FileModule } from './file/file.module';
 import { PermissionModule } from './permission/permission.module';
 import { PostModule } from './post/post.module';
-import { PostService } from './post/post.service';
 import { RoleModule } from './role/role.module';
 import { UserModule } from './user/user.module';
 import { UserService } from './user/user.service';
@@ -85,6 +84,5 @@ import { UserService } from './user/user.service';
     PermissionModule,
     AccountModule,
   ],
-  providers: [UserService, PostService],
 })
 export class AppModule {}
