@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from '@pictode-api/auth';
 import { CacheModule } from '@pictode-api/cache';
 import { PrismaModule } from '@pictode-api/prisma';
@@ -19,11 +19,8 @@ import { UserService } from './user/user.service';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     LoggerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
-        const isProduction = configService.get('NODE_ENV') === 'production';
-
+      useFactory: () => {
+        const isProduction = process.env.NODE_ENV === 'production'; // 直接使用 process.env
         return {
           pinoHttp: {
             transport: isProduction
