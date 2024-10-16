@@ -1,14 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@pictode-api/prisma';
-import { Post, Prisma } from '@prisma/client';
+import { Post, Prisma, User } from '@prisma/client';
+import { plainToClass } from 'class-transformer';
+import { CreatePostVO } from './vo/create-post.vo';
 
 @Injectable()
 export class PostService {
   constructor(private readonly prisma: PrismaService) {}
-
-  findAll() {
-    return this.prisma.post.findMany();
-  }
 
   async post(postWhereUniqueInput: Prisma.PostWhereUniqueInput): Promise<Post | null> {
     return this.prisma.post.findUnique({
@@ -33,10 +31,19 @@ export class PostService {
     });
   }
 
-  async createPost(data: Prisma.PostCreateInput): Promise<Post> {
-    return this.prisma.post.create({
-      data,
+  async createPost(user: User, data: Prisma.PostCreateInput): Promise<CreatePostVO> {
+    console.log('====>', data);
+    const post = await this.prisma.post.create({
+      data: {
+        ...data,
+        author: {
+          connect: {
+            id: user.id,
+          },
+        },
+      },
     });
+    return plainToClass(CreatePostVO, post);
   }
 
   async updatePost(params: { where: Prisma.PostWhereUniqueInput; data: Prisma.PostUpdateInput }): Promise<Post> {
