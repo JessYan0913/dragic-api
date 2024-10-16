@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from '@pictode-api/auth';
 import { CacheModule } from '@pictode-api/cache';
 import { PrismaModule } from '@pictode-api/prisma';
 import { StorageModule } from '@pictode-api/storage';
+import { LoggerModule } from 'nestjs-pino';
+import { join } from 'path';
 import { AccountModule } from './account/account.module';
 import { FileModule } from './file/file.module';
 import { PermissionModule } from './permission/permission.module';
@@ -16,6 +18,49 @@ import { UserService } from './user/user.service';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    LoggerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const isProduction = configService.get('NODE_ENV') === 'production';
+
+        return {
+          pinoHttp: {
+            transport: isProduction
+              ? {
+                  target: 'pino-roll',
+                  options: {
+                    file: join('logs', 'log'),
+                    frequency: 'daily',
+                    mkdir: true,
+                    dateFormat: 'yyyy-MM-dd-hh',
+                  },
+                }
+              : {
+                  target: 'pino-pretty',
+                  options: { singleLine: true },
+                },
+            level: isProduction ? 'info' : 'debug',
+            timestamp: () => {
+              const now = new Date();
+              const formattedDate = new Intl.DateTimeFormat('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false, // 24小时制
+              })
+                .format(now)
+                .replace(/\//g, '-')
+                .replace(',', ' '); // 替换格式为 yyyy-MM-dd HH:mm:ss
+              return `,"time":"${formattedDate}"`; // 格式化为 yyyy-MM-dd hh:mm:ss
+            },
+          },
+        };
+      },
+    }),
     StorageModule.forRoot({
       service: process.env.STORAGE_SERVICE as any,
       config: {
