@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Action } from '@prisma/client';
 
-export class CreatePermissionVO {
+export class UpdatePermissionVO {
   @ApiProperty({ description: '权限ID' })
   id: number;
 

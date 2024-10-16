@@ -1,10 +1,12 @@
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 import { ApiResponse } from '@nestjs/swagger';
-import { Permission } from '@prisma/client';
 import { CreatePermissionDto } from './dto/create-permission.dto'; // 导入 CreatePermissionDto
+import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { PermissionService } from './permission.service';
 import { CreatePermissionVO } from './vo/create-permission.vo';
+import { DeletePermissionVO } from './vo/delete-permission.vo';
 import { PermissionListVO } from './vo/permission-list.vo';
+import { UpdatePermissionVO } from './vo/update-permission.vo';
 
 @Controller('permission')
 export class PermissionController {
@@ -31,12 +33,22 @@ export class PermissionController {
   }
 
   @Put('/:id')
-  async updatePermission(@Param('id') id: string, @Body() data: Omit<Permission, 'id'>): Promise<Permission> {
-    return this.permissionService.updatePermission({ where: { id: +id }, data });
+  @ApiResponse({
+    status: 200,
+    description: '权限更新成功',
+    type: UpdatePermissionVO, // 指定返回类型
+  })
+  async updatePermission(@Param('id') id: number, @Body() data: UpdatePermissionDto): Promise<UpdatePermissionVO> {
+    return this.permissionService.updatePermission({ where: { id }, data });
   }
 
   @Delete('/:id')
-  async deletePermission(@Param('id') id: string): Promise<Permission> {
+  @ApiResponse({
+    status: 200,
+    description: '角色删除成功',
+    type: DeletePermissionVO,
+  })
+  async deletePermission(@Param('id') id: number): Promise<DeletePermissionVO> {
     return this.permissionService.deletePermission(id);
   }
 }
