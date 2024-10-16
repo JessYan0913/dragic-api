@@ -5,18 +5,21 @@ const caches = {
   vercel_kv: VercelService,
 };
 
-export type Caches = keyof typeof caches;
+export type ForRootOptions = {
+  service: 'vercel_kv';
+  config: {
+    token: string;
+    url: string;
+  };
+};
 
 @Global()
-@Module({
-  providers: [VercelService],
-  exports: [VercelService],
-})
+@Module({})
 export class CacheModule {
-  static forRoot(storage: Caches): DynamicModule {
+  static forRoot({ service, config }: ForRootOptions): DynamicModule {
     const providers = {
       provide: 'Cache',
-      useClass: caches[storage],
+      useFactory: () => new caches[service](config),
     };
     return {
       global: true,

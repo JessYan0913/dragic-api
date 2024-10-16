@@ -75,7 +75,10 @@ import { UserService } from './user/user.service';
         },
       },
     }),
-    CacheModule.forRoot('vercel_kv'),
+    CacheModule.forRoot({
+      service: 'vercel_kv',
+      config: { token: process.env.KV_REST_API_TOKEN, url: process.env.KV_REST_API_URL },
+    }),
     PrismaModule,
     UserModule,
     PostModule,
