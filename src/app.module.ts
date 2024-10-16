@@ -59,10 +59,7 @@ import { UserService } from './user/user.service';
     }),
     StorageModule.forRoot({
       service: process.env.STORAGE_SERVICE as any,
-      config: {
-        token: process.env.VERCEL_BLOB_TOKEN,
-        baseUrl: process.env.VERCEL_BLOB_BASE_URL,
-      },
+      config: { token: process.env.VERCEL_BLOB_TOKEN, baseUrl: process.env.VERCEL_BLOB_BASE_URL },
     }),
     AuthModule.forRoot({
       userService: UserService,
@@ -70,9 +67,7 @@ import { UserService } from './user/user.service';
       enableResourceGuard: process.env.ENABLE_RESOURCE_GUARD === 'true', // 将字符串转换为布尔值
       jwt: {
         secret: process.env.JWT_SECRET,
-        signOptions: {
-          expiresIn: process.env.JWT_EXPIRES_IN,
-        },
+        signOptions: { expiresIn: process.env.JWT_EXPIRES_IN },
       },
     }),
     CacheModule.forRoot({
