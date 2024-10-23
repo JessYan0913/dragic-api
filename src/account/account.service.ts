@@ -18,7 +18,7 @@ export class AccountService {
   async login(user: User): Promise<LoginVO> {
     const userEntity = await this.userService.cacheUser(user);
     const { accessToken } = await this.authService.login(user);
-    return plainToClass(LoginVO, { accessToken, user: userEntity });
+    return plainToClass(LoginVO, { accessToken, user: userEntity }, { excludeExtraneousValues: true });
   }
 
   async registry(user: Prisma.UserCreateInput): Promise<RegistryVO> {
