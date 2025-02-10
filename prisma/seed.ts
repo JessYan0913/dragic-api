@@ -14,13 +14,18 @@ async function cleanDatabase() {
   console.log('Cleaning database...');
 
   await prisma.$transaction(async (prisma) => {
-    // 1. 删除用户相关数据
+    // 1. 删除应用相关数据
+    await prisma.schema.deleteMany();
+    await prisma.page.deleteMany();
+    await prisma.application.deleteMany();
+
+    // 2. 删除用户相关数据
     await prisma.user.deleteMany();
 
-    // 2. 删除帖子
+    // 3. 删除帖子
     await prisma.post.deleteMany();
 
-    // 3. 删除角色和权限
+    // 4. 删除角色和权限
     await prisma.role.deleteMany();
     await prisma.permission.deleteMany();
   });
@@ -153,6 +158,66 @@ async function main() {
   });
 
   console.log('Created admin user:', admin.email);
+
+  // 6. 创建示例应用
+  const demoApp = await prisma.application.create({
+    data: {
+      name: '示例应用',
+      description: '这是一个用于演示的低代码应用',
+      creator: {
+        connect: { id: admin.id },
+      },
+      pages: {
+        create: [
+          {
+            title: '首页',
+            path: '/',
+            components: {
+              type: 'page',
+              children: [
+                {
+                  type: 'header',
+                  props: { title: '欢迎使用示例应用' },
+                },
+                {
+                  type: 'table',
+                  props: { dataSource: 'users', columns: ['name', 'email'] },
+                },
+              ],
+            },
+          },
+          {
+            title: '关于',
+            path: '/about',
+            components: {
+              type: 'page',
+              children: [
+                {
+                  type: 'text',
+                  props: { content: '这是一个示例应用' },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      schemas: {
+        create: [
+          {
+            name: 'users',
+            description: '用户数据模型',
+            fields: {
+              name: { type: 'string', label: '姓名' },
+              email: { type: 'string', label: '邮箱' },
+              age: { type: 'number', label: '年龄' },
+            },
+          },
+        ],
+      },
+    },
+  });
+
+  console.log('Created demo application:', demoApp.name);
   console.log('Seed data created successfully');
 }
 

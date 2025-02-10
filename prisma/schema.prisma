@@ -14,14 +14,15 @@ datasource db {
 }
 
 model User {
-  id         Int         @default(autoincrement()) @id
-  email      String      @unique
-  password   String
-  name       String?
-  age        Int?
-  posts      Post[]
-  roles      Role[]      @relation("UserRoles")
+  id          Int          @default(autoincrement()) @id
+  email       String       @unique
+  password    String
+  name        String?
+  age         Int?
+  posts       Post[]
+  roles       Role[]       @relation("UserRoles")
   permissions Permission[] @relation("UserPermissions")  // 用户与权限的多对多关系
+  applications Application[] // 用户创建的应用
 }
 
 model Post {
@@ -34,20 +35,20 @@ model Post {
 }
 
 model Role {
-  id         Int        @default(autoincrement()) @id
-  name       String     @unique
-  users      User[]     @relation("UserRoles")    // 角色与用户的多对多关系
+  id          Int          @default(autoincrement()) @id
+  name        String       @unique
+  users       User[]       @relation("UserRoles")    // 角色与用户的多对多关系
   permissions Permission[] @relation("RolePermissions")  // 角色与权限的多对多关系
 }
 
 model Permission {
-  id          Int         @default(autoincrement()) @id
-  name        String      @unique
+  id          Int          @default(autoincrement()) @id
+  name        String       @unique
   description String?
-  resource    String      // 资源路径，对应 API 的路径
-  action      Action      // 动作，表示 API 请求的动作
-  users       User[]      @relation("UserPermissions")  // 权限与用户的多对多关系
-  roles       Role[]      @relation("RolePermissions")  // 权限与角色的多对多关系
+  resource    String       // 资源路径，对应 API 的路径
+  action      Action       // 动作，表示 API 请求的动作
+  users       User[]       @relation("UserPermissions")  // 权限与用户的多对多关系
+  roles       Role[]       @relation("RolePermissions")  // 权限与角色的多对多关系
 }
 
 enum Action {
@@ -60,4 +61,45 @@ enum Action {
   HEAD       // 对应 HTTP HEAD 请求，获取资源的元数据（不返回响应体）
   TRACE      // 对应 HTTP TRACE 请求，跟踪请求-响应链
   CONNECT    // 对应 HTTP CONNECT 请求，用于启动双向的通信通道（通常用于隧道协议）
+}
+
+// 低代码平台模型
+
+model Application {
+  id          Int       @default(autoincrement()) @id
+  name        String    // 应用名称
+  description String?   // 应用描述
+  creator     User      @relation(fields: [creatorId], references: [id])
+  creatorId   Int
+  pages       Page[]    // 应用包含的页面
+  schemas     Schema[]  // 应用的数据模型
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Page {
+  id            Int         @default(autoincrement()) @id
+  title         String      // 页面标题
+  path          String      // 页面路径
+  application   Application @relation(fields: [applicationId], references: [id])
+  applicationId Int
+  components    Json        // 存储页面的组件树结构
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([applicationId, path])  // 确保同一应用中页面路径唯一
+}
+
+model Schema {
+  id            Int         @default(autoincrement()) @id
+  name          String      // 数据模型名称
+  description   String?     // 数据模型描述
+  application   Application @relation(fields: [applicationId], references: [id])
+  applicationId Int
+  fields        Json        // 存储字段定义
+  relations     Json?       // 存储关联关系定义
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([applicationId, name])  // 确保同一应用中模型名称唯一
 }
