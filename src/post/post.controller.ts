@@ -11,8 +11,6 @@ export class PostController {
 
   @Post()
   async createDraft(@CurrentUser() user: UserModel, @Body() createPostDto: CreatePostDto): Promise<CreatePostVO> {
-    console.log('+++++++', user, createPostDto);
-
     return this.postService.createPost(user, createPostDto);
   }
 
