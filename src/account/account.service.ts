@@ -22,7 +22,33 @@ export class AccountService {
   }
 
   async registry(user: Prisma.UserCreateInput): Promise<RegistryVO> {
-    const userEntity = await this.prisma.user.create({ data: user });
-    return plainToClass(RegistryVO, userEntity);
+    return await this.prisma.$transaction(async (prisma) => {
+      // 1. 获取默认用户角色
+      const defaultRole = await prisma.role.findUnique({
+        where: { name: 'User' },
+      });
+
+      if (!defaultRole) {
+        throw new Error('默认用户角色不存在，请确保已运行数据库初始化脚本(prisma db seed)');
+      }
+
+      // 2. 创建用户并关联默认角色
+      const userEntity = await prisma.user.create({
+        data: {
+          ...user,
+          roles: {
+            connect: {
+              id: defaultRole.id,
+            },
+          },
+        },
+        include: {
+          roles: true,
+          permissions: true,
+        },
+      });
+
+      return plainToClass(RegistryVO, userEntity);
+    });
   }
 }
