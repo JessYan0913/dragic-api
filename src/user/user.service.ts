@@ -21,7 +21,12 @@ export class UserService implements IUserService<User> {
     // 获取用户全部信息
     const user = await this.cache.get<User & { permissions: Permission[] }>(`user:${id}`);
 
-    // 创建一个正则表达式来匹配请求的资源;
+    // 检查是否有super_admin权限
+    if (user.permissions.some((p) => p.name === 'super_admin')) {
+      return true;
+    }
+
+    // 创建一个正则表达式来匹配请求的资源
     const requestRegex = new RegExp('^' + permission.resource.replace(/:\w+/g, '[^/]+') + '$');
 
     // 检查是否包含所需的权限
