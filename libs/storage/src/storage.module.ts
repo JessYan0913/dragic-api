@@ -19,7 +19,7 @@ export class StorageModule {
   static forRoot({ service, config }: ForRootOptions): DynamicModule {
     const providers = {
       provide: 'Storage',
-      useFactory: () => new storages[service](config),
+      useFactory: () => service && new storages[service](config),
     };
     return {
       global: true,

@@ -29,6 +29,6 @@ export class AccountController {
   })
   @Post('login')
   async login(@Request() req: Express.Request): Promise<LoginVO> {
-    return this.accountService.login(req.user as User);
+    return await this.accountService.login(req.user as User);
   }
 }
