@@ -20,11 +20,7 @@ async function cleanDatabase() {
     // 2. 删除帖子
     await prisma.post.deleteMany();
 
-    // 3. 删除发票和客户
-    await prisma.invoice.deleteMany();
-    await prisma.customer.deleteMany();
-
-    // 4. 删除角色和权限
+    // 3. 删除角色和权限
     await prisma.role.deleteMany();
     await prisma.permission.deleteMany();
   });

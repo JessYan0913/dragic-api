@@ -61,26 +61,3 @@ enum Action {
   TRACE      // 对应 HTTP TRACE 请求，跟踪请求-响应链
   CONNECT    // 对应 HTTP CONNECT 请求，用于启动双向的通信通道（通常用于隧道协议）
 }
-
-model Customer {
-  id       Int    @default(autoincrement()) @id
-  name     String    @db.VarChar(255)
-  email    String    @db.VarChar(255)
-  imageUrl String    @db.VarChar(255)
-  invoices Invoice[]
-}
-
-model Invoice {
-  id         Int   @default(autoincrement()) @id
-  customerId Int
-  amount     Int
-  status     String   @db.VarChar(255)
-  date       DateTime @db.Date
-
-  customer   Customer @relation(fields: [customerId], references: [id])
-}
-
-model Revenue {
-  month   String @unique @db.VarChar(4)
-  revenue Int
-}
