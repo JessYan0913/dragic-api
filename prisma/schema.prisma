@@ -72,7 +72,6 @@ model Application {
   creator     User      @relation(fields: [creatorId], references: [id])
   creatorId   Int
   pages       Page[]    // 应用包含的页面
-  schemas     Schema[]  // 应用的数据模型
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -88,18 +87,4 @@ model Page {
   updatedAt     DateTime    @updatedAt
 
   @@unique([applicationId, path])  // 确保同一应用中页面路径唯一
-}
-
-model Schema {
-  id            Int         @default(autoincrement()) @id
-  name          String      // 数据模型名称
-  description   String?     // 数据模型描述
-  application   Application @relation(fields: [applicationId], references: [id])
-  applicationId Int
-  fields        Json        // 存储字段定义
-  relations     Json?       // 存储关联关系定义
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-
-  @@unique([applicationId, name])  // 确保同一应用中模型名称唯一
 }
