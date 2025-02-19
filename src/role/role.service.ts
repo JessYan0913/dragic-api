@@ -5,6 +5,7 @@ import { plainToClass } from 'class-transformer';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { CreateRoleVO } from './vo/create-role.vo';
 import { DeleteRoleVO } from './vo/delete-role.vo';
+import { RoleListVO, RoleItemVO } from './vo/role-list.vo';
 import { UpdateRoleVO } from './vo/update-role.vo';
 
 @Injectable()
@@ -17,15 +18,35 @@ export class RoleService {
     cursor?: Prisma.RoleWhereUniqueInput;
     where?: Prisma.RoleWhereInput;
     orderBy?: Prisma.RoleOrderByWithRelationInput;
-  }): Promise<Role[]> {
+  }): Promise<RoleListVO> {
     const { skip, take, cursor, where, orderBy } = params;
-    return this.prisma.role.findMany({
+    
+    // 获取角色列表
+    const roles = await this.prisma.role.findMany({
       skip,
       take,
       cursor,
       where,
       orderBy,
+      include: {
+        _count: {
+          select: {
+            permissions: true
+          }
+        }
+      }
     });
+
+    // 获取总数
+    const total = await this.prisma.role.count({ where });
+
+    // 转换为VO对象
+    const items = roles.map(role => plainToClass(RoleItemVO, {
+      ...role,
+      permissionCount: role._count.permissions
+    }));
+
+    return plainToClass(RoleListVO, { items, total });
   }
 
   async createRole(data: CreateRoleDto): Promise<CreateRoleVO> {
@@ -35,7 +56,6 @@ export class RoleService {
       },
     });
 
-    // 使用class-transformer转换为VO对象
     return plainToClass(CreateRoleVO, role);
   }
 
@@ -57,6 +77,9 @@ export class RoleService {
   async deleteRole(where: Prisma.RoleWhereUniqueInput): Promise<DeleteRoleVO> {
     const role = await this.prisma.role.delete({
       where,
+      include: {
+        permissions: true,
+      },
     });
     return plainToClass(DeleteRoleVO, role);
   }
