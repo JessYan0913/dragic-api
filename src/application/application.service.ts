@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@pictode-api/prisma';
+import { User as UserModel } from '@prisma/client';
 import { plainToClass } from 'class-transformer';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { CreatePageDto } from './dto/create-page.dto';
@@ -17,20 +18,23 @@ import { UpdatePageVO } from './vo/update-page.vo';
 export class ApplicationService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createDto: CreateApplicationDto): Promise<CreateApplicationVO> {
+  async create(user: UserModel, createDto: CreateApplicationDto): Promise<CreateApplicationVO> {
     const application = await this.prisma.application.create({
       data: {
         ...createDto,
-        creator: { connect: { id: 1 } }, // 临时使用测试用户ID
+        creator: { connect: { id: user.id } },
       },
       include: { creator: true },
     });
     return plainToClass(CreateApplicationVO, application);
   }
 
-  async findAll({ page = 1, pageSize = 10 }: PaginationApplicationDto): Promise<ApplicationListVO[]> {
+  async findAll(user: UserModel, { page = 1, pageSize = 10 }: PaginationApplicationDto): Promise<ApplicationListVO[]> {
     const skip = (page - 1) * pageSize;
     const applications = await this.prisma.application.findMany({
+      where: {
+        creatorId: user.id,
+      },
       skip,
       take: pageSize,
       include: { creator: true, pages: true },
