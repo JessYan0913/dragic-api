@@ -15,7 +15,6 @@ async function cleanDatabase() {
 
   await prisma.$transaction(async (prisma) => {
     // 1. 删除应用相关数据
-    await prisma.schema.deleteMany();
     await prisma.page.deleteMany();
     await prisma.application.deleteMany();
 
@@ -197,19 +196,6 @@ async function main() {
                   props: { content: '这是一个示例应用' },
                 },
               ],
-            },
-          },
-        ],
-      },
-      schemas: {
-        create: [
-          {
-            name: 'users',
-            description: '用户数据模型',
-            fields: {
-              name: { type: 'string', label: '姓名' },
-              email: { type: 'string', label: '邮箱' },
-              age: { type: 'number', label: '年龄' },
             },
           },
         ],

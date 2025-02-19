@@ -7,6 +7,7 @@ import { StorageModule } from '@pictode-api/storage';
 import { LoggerModule } from 'nestjs-pino';
 import { join } from 'path';
 import { AccountModule } from './account/account.module';
+import { ApplicationModule } from './application/application.module';
 import { FileModule } from './file/file.module';
 import { PermissionModule } from './permission/permission.module';
 import { PostModule } from './post/post.module';
@@ -81,6 +82,7 @@ import { UserService } from './user/user.service';
     RoleModule,
     PermissionModule,
     AccountModule,
+    ApplicationModule,
   ],
 })
 export class AppModule {}
