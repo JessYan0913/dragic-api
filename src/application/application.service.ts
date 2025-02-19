@@ -1,13 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@pictode-api/prisma';
+import { plainToClass } from 'class-transformer';
 import { CreateApplicationDto } from './dto/create-application.dto';
+import { CreatePageDto } from './dto/create-page.dto';
 import { PaginationApplicationDto } from './dto/pagination-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
-import { plainToClass } from 'class-transformer';
-import { CreateApplicationVO } from './vo/create-application.vo';
+import { UpdatePageDto } from './dto/update-page.dto';
 import { ApplicationDetailVO } from './vo/application-detail.vo';
 import { ApplicationListVO } from './vo/application-list.vo';
-import { NotFoundException } from '@nestjs/common';
+import { CreateApplicationVO } from './vo/create-application.vo';
+import { CreatePageVO } from './vo/create-page.vo';
+import { PageDetailVO } from './vo/page-detail.vo';
+import { UpdatePageVO } from './vo/update-page.vo';
 
 @Injectable()
 export class ApplicationService {
@@ -45,6 +49,11 @@ export class ApplicationService {
       where: { id },
       include: { creator: true, pages: true },
     });
+
+    if (!application) {
+      throw new NotFoundException(`应用ID ${id} 不存在`);
+    }
+
     return plainToClass(ApplicationDetailVO, application);
   }
 
@@ -58,25 +67,55 @@ export class ApplicationService {
   }
 
   async remove(id: number): Promise<void> {
-    const application = await this.prisma.application.findUnique({
+    await this.prisma.application.delete({
       where: { id },
-      include: { pages: true },
+    });
+  }
+
+  // 页面管理相关方法
+  async createPage(applicationId: number, createPageDto: CreatePageDto): Promise<CreatePageVO> {
+    const page = await this.prisma.page.create({
+      data: {
+        ...createPageDto,
+        application: {
+          connect: { id: applicationId }
+        }
+      },
+    });
+    return plainToClass(CreatePageVO, page);
+  }
+
+  async findPageById(id: number): Promise<PageDetailVO> {
+    const page = await this.prisma.page.findUnique({
+      where: { id },
     });
 
-    if (!application) {
-      throw new NotFoundException(`应用ID ${id} 不存在`);
+    if (!page) {
+      throw new NotFoundException(`页面ID ${id} 不存在`);
     }
 
-    // 删除应用及其关联的页面
-    await this.prisma.$transaction([
-      // 先删除所有关联的页面
-      this.prisma.page.deleteMany({
-        where: { applicationId: id },
-      }),
-      // 然后删除应用本身
-      this.prisma.application.delete({
-        where: { id },
-      }),
-    ]);
+    return plainToClass(PageDetailVO, page);
+  }
+
+  async findPagesByApplicationId(applicationId: number): Promise<PageDetailVO[]> {
+    const pages = await this.prisma.page.findMany({
+      where: { applicationId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return pages.map(page => plainToClass(PageDetailVO, page));
+  }
+
+  async updatePage(id: number, updatePageDto: UpdatePageDto): Promise<UpdatePageVO> {
+    const page = await this.prisma.page.update({
+      where: { id },
+      data: updatePageDto,
+    });
+    return plainToClass(UpdatePageVO, page);
+  }
+
+  async removePage(id: number): Promise<void> {
+    await this.prisma.page.delete({
+      where: { id },
+    });
   }
 }
