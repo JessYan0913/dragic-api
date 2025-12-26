@@ -11,8 +11,8 @@
     "@pictode-api/storage": "<rootDir>/../libs/storage/src",
     "@pictode-api/auth/(.*)": "<rootDir>/../libs/auth/src/$1",
     "@pictode-api/auth": "<rootDir>/../libs/auth/src",
-    "@pictode-api/prisma/(.*)": "<rootDir>/../libs/prisma/src/$1",
-    "@pictode-api/prisma": "<rootDir>/../libs/prisma/src",
+    "@pictode-api/drizzle/(.*)": "<rootDir>/../libs/drizzle/src/$1",
+    "@pictode-api/drizzle": "<rootDir>/../libs/drizzle/src",
     "@pictode-api/cache/(.*)": "<rootDir>/../libs/cache/src/$1",
     "@pictode-api/cache": "<rootDir>/../libs/cache/src"
   }

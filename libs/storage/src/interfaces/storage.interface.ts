@@ -1,5 +1,10 @@
 export interface Storage {
-  upload(file: Express.Multer.File): Promise<string>;
+  putObject(params: {
+    key?: string;
+    filename?: string;
+    data: Buffer;
+    contentType?: string;
+  }): Promise<string>;
   getUrl(fileKey: string): Promise<string>;
   delete(fileKey: string): Promise<void>;
 }

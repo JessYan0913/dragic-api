@@ -1,25 +1,39 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
+import { RedisService } from './redis/redis.service';
 import { VercelService } from './vercel/vercel.service';
 
-const caches = {
-  vercel_kv: VercelService,
+type RedisConfig = {
+  url: string;
 };
 
-export type ForRootOptions = {
-  service: 'vercel_kv';
-  config: {
-    token: string;
-    url: string;
-  };
+type VercelKVConfig = {
+  token: string;
+  url: string;
 };
+
+export type ForRootOptions =
+  | {
+      service?: 'redis';
+      config: RedisConfig;
+    }
+  | {
+      service: 'vercel_kv';
+      config: VercelKVConfig;
+    };
 
 @Global()
 @Module({})
 export class CacheModule {
-  static forRoot({ service, config }: ForRootOptions): DynamicModule {
+  static forRoot(options: ForRootOptions): DynamicModule {
     const providers = {
       provide: 'Cache',
-      useFactory: () => new caches[service](config),
+      useFactory: () => {
+        if (options?.service === 'vercel_kv') {
+          return new VercelService(options.config);
+        }
+
+        return new RedisService(options.config);
+      },
     };
     return {
       global: true,

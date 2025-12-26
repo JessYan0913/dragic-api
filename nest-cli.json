@@ -27,13 +27,13 @@
         "tsConfigPath": "libs/auth/tsconfig.lib.json"
       }
     },
-    "prisma": {
+    "drizzle": {
       "type": "library",
-      "root": "libs/prisma",
+      "root": "libs/drizzle",
       "entryFile": "index",
-      "sourceRoot": "libs/prisma/src",
+      "sourceRoot": "libs/drizzle/src",
       "compilerOptions": {
-        "tsConfigPath": "libs/prisma/tsconfig.lib.json"
+        "tsConfigPath": "libs/drizzle/tsconfig.lib.json"
       }
     },
     "cache": {

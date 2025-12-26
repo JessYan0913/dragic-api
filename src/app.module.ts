@@ -2,16 +2,10 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from '@pictode-api/auth';
 import { CacheModule } from '@pictode-api/cache';
-import { PrismaModule } from '@pictode-api/prisma';
+import { DrizzleModule } from '@pictode-api/drizzle';
 import { StorageModule } from '@pictode-api/storage';
 import { LoggerModule } from 'nestjs-pino';
 import { join } from 'path';
-import { AccountModule } from './account/account.module';
-import { ApplicationModule } from './application/application.module';
-import { FileModule } from './file/file.module';
-import { PermissionModule } from './permission/permission.module';
-import { PostModule } from './post/post.module';
-import { RoleModule } from './role/role.module';
 import { UserModule } from './user/user.module';
 import { UserService } from './user/user.service';
 
@@ -58,10 +52,28 @@ import { UserService } from './user/user.service';
         };
       },
     }),
-    StorageModule.forRoot({
-      service: process.env.STORAGE_SERVICE as any,
-      config: { token: process.env.VERCEL_BLOB_TOKEN, baseUrl: process.env.VERCEL_BLOB_BASE_URL },
-    }),
+    StorageModule.forRoot(
+      process.env.STORAGE_SERVICE === 'minio'
+        ? {
+            service: 'minio',
+            config: {
+              endPoint: process.env.MINIO_ENDPOINT ?? '',
+              port: process.env.MINIO_PORT ? Number(process.env.MINIO_PORT) : undefined,
+              useSSL: process.env.MINIO_USE_SSL === 'true',
+              accessKey: process.env.MINIO_ACCESS_KEY ?? '',
+              secretKey: process.env.MINIO_SECRET_KEY ?? '',
+              bucket: process.env.MINIO_BUCKET ?? '',
+              publicBaseUrl: process.env.MINIO_PUBLIC_BASE_URL,
+            },
+          }
+        : {
+            service: 'vercel_blob',
+            config: {
+              token: process.env.VERCEL_BLOB_TOKEN ?? '',
+              baseUrl: process.env.VERCEL_BLOB_BASE_URL ?? '',
+            },
+          },
+    ),
     AuthModule.forRoot({
       userService: UserService,
       enableJwtGuard: process.env.ENABLE_JWT_GUARD === 'true', // 将字符串转换为布尔值
@@ -71,18 +83,24 @@ import { UserService } from './user/user.service';
         signOptions: { expiresIn: process.env.JWT_EXPIRES_IN },
       },
     }),
-    CacheModule.forRoot({
-      service: 'vercel_kv',
-      config: { token: process.env.KV_REST_API_TOKEN, url: process.env.KV_REST_API_URL },
-    }),
-    PrismaModule,
+    CacheModule.forRoot(
+      process.env.CACHE_SERVICE === 'vercel_kv'
+        ? {
+            service: 'vercel_kv',
+            config: {
+              token: process.env.KV_REST_API_TOKEN ?? '',
+              url: process.env.KV_URL ?? '',
+            },
+          }
+        : {
+            service: 'redis',
+            config: {
+              url: process.env.REDIS_URL ?? process.env.KV_URL ?? '',
+            },
+          },
+    ),
+    DrizzleModule,
     UserModule,
-    PostModule,
-    FileModule,
-    RoleModule,
-    PermissionModule,
-    AccountModule,
-    ApplicationModule,
   ],
 })
 export class AppModule {}
