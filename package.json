@@ -29,12 +29,15 @@
     "@nestjs/mapped-types": "^2.0.5",
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/throttler": "^5.1.2",
     "@vercel/blob": "^0.25.0",
     "@vercel/kv": "^3.0.0",
     "axios": "^1.7.7",
+    "bullmq": "^5.15.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "drizzle-orm": "^0.44.4",
+    "ioredis": "^5.4.1",
     "minio": "^8.0.6",
     "multer": "1.4.5-lts.1",
     "nestjs-pino": "^4.1.0",
@@ -105,7 +108,9 @@
       "^@pictode-api/storage(|/.*)$": "<rootDir>/libs/storage/src/$1",
       "^@pictode-api/auth(|/.*)$": "<rootDir>/libs/auth/src/$1",
       "^@pictode-api/drizzle(|/.*)$": "<rootDir>/libs/drizzle/src/$1",
-      "^@pictode-api/cache(|/.*)$": "<rootDir>/libs/cache/src/$1"
+      "^@pictode-api/cache(|/.*)$": "<rootDir>/libs/cache/src/$1",
+      "^@pictode-api/queue(|/.*)$": "<rootDir>/libs/queue/src/$1",
+      "^@pictode-api/rate-limit(|/.*)$": "<rootDir>/libs/rate-limit/src/$1"
     }
   },
   "packageManager": "pnpm@9.13.0+sha512.beb9e2a803db336c10c9af682b58ad7181ca0fbd0d4119f2b33d5f2582e96d6c0d93c85b23869295b765170fbdaa92890c0da6ada457415039769edf3c959efe"

@@ -26,7 +26,11 @@
       "@pictode-api/drizzle": ["libs/drizzle/src"],
       "@pictode-api/drizzle/*": ["libs/drizzle/src/*"],
       "@pictode-api/cache": ["libs/cache/src"],
-      "@pictode-api/cache/*": ["libs/cache/src/*"]
+      "@pictode-api/cache/*": ["libs/cache/src/*"],
+      "@pictode-api/queue": ["libs/queue/src"],
+      "@pictode-api/queue/*": ["libs/queue/src/*"],
+      "@pictode-api/rate-limit": ["libs/rate-limit/src"],
+      "@pictode-api/rate-limit/*": ["libs/rate-limit/src/*"]
     }
   }
 }
