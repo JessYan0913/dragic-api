@@ -1,6 +1,5 @@
 export interface UserPayload {
   id: string | number;
-  roles?: string[];
   [key: string]: any;
 }
 
