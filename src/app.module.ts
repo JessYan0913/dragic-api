@@ -8,6 +8,9 @@ import { LoggerModule } from 'nestjs-pino';
 import { join } from 'path';
 import { UserModule } from './user/user.module';
 import { UserService } from './user/user.service';
+import { AuthController } from './auth/auth.controller';
+import { AuthService } from './auth/auth.service';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -101,6 +104,9 @@ import { UserService } from './user/user.service';
     ),
     DrizzleModule,
     UserModule,
+    AuthModule,
   ],
+  controllers: [AuthController],
+  providers: [AuthService],
 })
 export class AppModule {}
