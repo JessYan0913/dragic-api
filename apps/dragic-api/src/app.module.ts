@@ -1,4 +1,3 @@
-import { AuthModule } from '@dragic/auth';
 import { CacheModule } from '@dragic/cache';
 import { DrizzleModule } from '@dragic/database';
 import { StorageModule } from '@dragic/storage';
@@ -7,7 +6,9 @@ import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { join } from 'path';
 import { UserModule } from './user/user.module';
-import { UserService } from './user/user.service';
+import { JwtStrategy } from '@dragic/auth';
+import { APP_GUARD } from '@nestjs/core';
+import { JWTAuthGuard } from '@dragic/auth';
 
 @Module({
   imports: [
@@ -74,15 +75,6 @@ import { UserService } from './user/user.service';
             },
           },
     ),
-    AuthModule.forRoot({
-      userService: UserService,
-      enableJwtGuard: process.env.ENABLE_JWT_GUARD === 'true', // 将字符串转换为布尔值
-      enableResourceGuard: process.env.ENABLE_RESOURCE_GUARD === 'true', // 将字符串转换为布尔值
-      jwt: {
-        secret: process.env.JWT_SECRET,
-        signOptions: { expiresIn: process.env.JWT_EXPIRES_IN },
-      },
-    }),
     CacheModule.forRoot(
       process.env.CACHE_SERVICE === 'vercel_kv'
         ? {
@@ -101,6 +93,16 @@ import { UserService } from './user/user.service';
     ),
     DrizzleModule,
     UserModule,
+  ],
+  providers: [
+    {
+      provide: JwtStrategy,
+      useFactory: () => new JwtStrategy(process.env.JWT_SECRET || 'your-secret-key'),
+    },
+    {
+      provide: APP_GUARD,
+      useClass: JWTAuthGuard,
+    },
   ],
 })
 export class AppModule {}

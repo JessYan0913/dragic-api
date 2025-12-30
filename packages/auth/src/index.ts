@@ -8,6 +8,8 @@ export * from './guards/local-auth.guard';
 export * from './guards/resource-auth.guard';
 export * from './guards/oauth-auth.guard';
 export * from './interfaces/user.interface';
+export * from './strategies/jwt.strategy';
+export * from './strategies/local.strategy';
 export * from './strategies/oauth.strategy';
 export * from './oauth/oauth.service';
 export * from './oauth/oauth-providers';

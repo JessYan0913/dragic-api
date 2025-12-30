@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15
+    container_name: dragic-postgres
+    environment:
+      POSTGRES_DB: dragic
+      POSTGRES_USER: dragic
+      POSTGRES_PASSWORD: dragic123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./packages/database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - dragic-network
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: dragic-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - dragic-network
+
+  # Auth Server (认证服务)
+  auth-server:
+    build:
+      context: .
+      dockerfile: apps/auth-server/Dockerfile
+    container_name: dragic-auth-server
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://dragic:dragic123@postgres:5432/dragic
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_EXPIRES_IN: 1h
+      AUTH_PORT: 3001
+      FEISHU_APP_ID: ${FEISHU_APP_ID}
+      FEISHU_APP_SECRET: ${FEISHU_APP_SECRET}
+      FEISHU_REDIRECT_URI: ${FEISHU_REDIRECT_URI}
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - dragic-network
+
+  # API Server (业务服务)
+  api-server:
+    build:
+      context: .
+      dockerfile: apps/dragic-api/Dockerfile
+    container_name: dragic-api-server
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://dragic:dragic123@postgres:5432/dragic
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      ENABLE_JWT_GUARD: "true"
+      ENABLE_RESOURCE_GUARD: "true"
+      STORAGE_SERVICE: minio
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: 9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: dragic
+      MINIO_USE_SSL: "false"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    networks:
+      - dragic-network
+
+  # MinIO 对象存储
+  minio:
+    image: minio/minio:latest
+    container_name: dragic-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - dragic-network
+
+  # Nginx 反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: dragic-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./ssl:/etc/nginx/ssl  # SSL 证书目录
+    depends_on:
+      - auth-server
+      - api-server
+    networks:
+      - dragic-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+networks:
+  dragic-network:
+    driver: bridge

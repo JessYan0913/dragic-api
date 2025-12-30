@@ -8,6 +8,7 @@ import { join } from 'path';
 import { OidcModule } from './oidc/oidc.module';
 import { UserModule } from './user/user.module';
 import { UserService } from './user/user.service';
+import { AuthModule as LocalAuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { UserService } from './user/user.service';
     DrizzleModule,
     UserModule,
     OidcModule,
+    LocalAuthModule,
   ],
 })
 export class AppModule {}
