@@ -1,211 +1,111 @@
-# 认证服务迁移文档
 
-## 迁移概述
+以下评估基于你仓库当前实现（我已阅读三个包的 `module/service/types/core` 等关键文件）。整体结论：**能满足“基础功能”**，但在 **依赖注入正确性、安全性（防爆破/重放/信息泄露）、可扩展性（配置与 provider 抽象）、可观测性与错误语义** 上有明显改进空间。下面按模块拆开说。
 
-将认证逻辑从 `dragic-api` 迁移到独立的 `auth-server` 服务，实现统一的认证中心。
+# 1) `@dragic/mail` 设计评估
 
-## 架构变更
+## 能否满足功能
+- **满足基础发信功能**：基于 `nodemailer` 的 SMTP 发送、支持 `text/html/attachments`、简单模板替换、批量模板发送、[verifyConnection()](cci:1://file:///e:/dragic-api/packages/mail/src/mail.service.ts:113:2-125:3)。
+- 适用于“小型项目/内部工具”直接用环境变量发信。
 
-### 迁移前
-```
-客户端 → dragic-api:3000/login     (登录注册)
-客户端 → dragic-api:3000/api/*     (业务API)
-客户端 → auth-server:3001/oidc/*   (OIDC认证)
-```
+## 设计合理性与问题
+- **[依赖注入/配置]** [MailService](cci:2://file:///e:/dragic-api/packages/mail/src/mail.service.ts:4:0-126:1) 构造函数直接读 `process.env.*`，导致：
+  - 测试困难（需要污染环境变量）。
+  - 多实例/多租户 SMTP（不同配置）无法支持。
+  - NestJS 里更推荐通过 [Module.register()](cci:1://file:///e:/dragic-api/packages/image-captcha/src/captcha.module.ts:19:2-44:3) / [forRootAsync()](cci:1://file:///e:/dragic-api/packages/image-captcha/src/captcha.module.ts:46:2-76:3) 注入配置或 transporter。
+- **[错误语义]** [sendMail()](cci:1://file:///e:/dragic-api/packages/mail/src/mail.service.ts:20:2-49:3) 捕获异常后返回 `{ success: false, error }`，而不是抛出 typed error：
+  - 上层（如 email-captcha）既要判断 `success`，又可能在异常路径拿不到结构化信息（错误码、可重试性等）。
+- **[可观测性]** 使用 `console.log/error`：
+  - Nest 生态通常用 `Logger`，并带上上下文字段（to、template、provider、耗时等）。
+- **[扩展性]** 仅支持 SMTP：缺少 provider 抽象（比如 SES、SendGrid、Resend），也没有队列/重试策略（生产必备）。
 
-### 迁移后
-```
-客户端 → auth-server:3001/auth/*   (登录注册)
-客户端 → auth-server:3001/oidc/*   (OIDC认证)
-客户端 → dragic-api:3000/api/*     (业务API，需携带JWT)
-```
+## 结论
+- **基本可用，但“库设计”偏弱**：目前更像“项目内 util service”，而不是可复用的 `@dragic/mail` 包。
 
-### Nginx 代理后（推荐）
-```
-客户端 → your-domain.com/auth/*    (认证相关)
-客户端 → your-domain.com/api/*     (业务API)
-```
+# 2) `@dragic/email-captcha` 设计评估
 
-## 第一阶段：认证端点迁移
+## 能否满足功能
+- **满足基础邮箱验证码流程**：
+  - [sendCaptcha()](cci:1://file:///e:/dragic-api/packages/email-captcha/src/email-captcha.service.ts:34:2-88:3) 生成数字码 -> 存储（带 TTL）-> 可选发邮件 -> 返回 `id`
+  - [verifyCaptcha()](cci:1://file:///e:/dragic-api/packages/image-captcha/src/captcha.service.ts:56:2-107:3) 校验 code/purpose -> 删除存储 -> 颁发 JWT token
+  - [verifyToken()](cci:1://file:///e:/dragic-api/packages/image-captcha/src/captcha.service.ts:109:2-113:3) 校验 token 中的 `{id,purpose}`
+- 抽象了 `storage` 接口，能对接 Redis/内存等。
 
-### 1. 在 auth-server 中添加认证端点
+## 设计合理性与问题
+- **[严重：邮件注入方式不正确]**
+  - [EmailCaptchaService](cci:2://file:///e:/dragic-api/packages/email-captcha/src/email-captcha.service.ts:20:0-141:1) 构造函数是 `@Optional() private mailService?: MailService`（类型是 [MailService](cci:2://file:///e:/dragic-api/packages/mail/src/mail.service.ts:4:0-126:1)）。
+  - 但 [EmailCaptchaModule.register()](cci:1://file:///e:/dragic-api/packages/email-captcha/src/email-captcha.module.ts:19:2-45:3) 里 `inject` 用的是字符串 `['MailService']`，而 [MailModule](cci:2://file:///e:/dragic-api/packages/mail/src/mail.module.ts:3:0-8:26) 实际提供的是 [MailService](cci:2://file:///e:/dragic-api/packages/mail/src/mail.service.ts:4:0-126:1) 类 token（不是 `'MailService'`）。
+  - 这会导致 `mailService` **大概率注入不到**，从而“表面启用了 enableMail 但不发邮件”。
+- **[安全：验证码明文存储]**
+  - 存储内容是 `JSON.stringify({ code, purpose })`，code 明文可被读取（若 storage 泄漏/被越权访问）。
+  - 常见做法：存 hash（如 `sha256(code + salt)`），比对时 hash。
+- **[安全：缺少防爆破/限流/重试策略]**
+  - 没有：
+    - 按 `email + purpose` 的发送频率限制（每分钟/每天上限）。
+    - 按 `id` 的验证尝试次数限制（比如 5 次锁定）。
+    - 验证失败后延迟/惩罚（防撞库）。
+  - 仅靠 6 位数字+TTL，在公开接口上容易被爆破（尤其没有次数限制时）。
+- **[token 设计]**
+  - [verifyCaptcha()](cci:1://file:///e:/dragic-api/packages/image-captcha/src/captcha.service.ts:56:2-107:3) 生成的 JWT 仅含 `id,purpose`，不含 `email`、不含一次性 `jti`/nonce。
+  - 如果 token 被泄漏，在 TTL 内可重复使用（依赖业务侧如何消费）。
+- **[强耦合 HTML 内容]**
+  - 邮件模板直接写在 service 内，且不可配置/不可国际化；对外复用时会变得很难维护。
+- **[模块 global]**
+  - `global: true` 让依赖图更隐式；作为 package 级模块可能会污染全局，建议谨慎（尤其多个应用共用 workspace 时）。
 
-创建了 `/src/auth` 目录，包含：
-- `auth.controller.ts` - 认证控制器
-- `auth.service.ts` - 认证服务
-- `auth.module.ts` - 认证模块
-- `dto/` - 数据传输对象
+## 结论
+- **核心流程能跑，但不够“生产级”**。最大风险点是 **邮件注入 token 错误** 和 **缺少限流/防爆破**。
 
-### 2. 新增的认证端点
+# 3) `@dragic/image-captcha` 设计评估
 
-- `POST /auth/register` - 用户注册
-- `POST /auth/login` - 用户登录
-- `POST /auth/refresh` - 刷新 token
-- `POST /auth/logout` - 用户登出
+## 能否满足功能
+- **满足拼图验证码 + 轨迹校验的基础功能**：
+  - [createCaptcha()](cci:1://file:///e:/dragic-api/packages/image-captcha/src/captcha.service.ts:24:2-54:3)：随机背景图 -> 生成拼图遮罩 -> 存 `{x,purpose}` 到 storage -> 返回 `bgUrl/puzzleUrl`（data URL）
+  - [verifyCaptcha()](cci:1://file:///e:/dragic-api/packages/image-captcha/src/captcha.service.ts:56:2-107:3)：校验轨迹“像人类” + 从 storage 比对 `x` 容差 -> 删除 -> 签 token
+  - 支持自定义 [Storage](cci:2://file:///e:/dragic-api/packages/image-captcha/src/types.ts:13:0-17:1) 与 [ImageLoader](cci:2://file:///e:/dragic-api/packages/image-captcha/src/types.ts:19:0-21:1)（[LocalImageLoader](cci:2://file:///e:/dragic-api/packages/image-captcha/src/loaders/local-image.ts:7:0-22:1) 已提供）
+- README 也给出了 NestJS 同步/异步接入方式，**整体对外 API 比 mail/email-captcha 更像一个可复用包**。
 
-## 第二阶段：dragic-api 改造
+## 设计合理性与问题
+- **[安全：purpose 校验缺失]**
+  - [verifyCaptcha()](cci:1://file:///e:/dragic-api/packages/image-captcha/src/captcha.service.ts:56:2-107:3) 最终签发 token 的 `purpose` 使用的是 `storedPurpose || ''`。
+  - 但是 [VerifyTrailPayload](cci:2://file:///e:/dragic-api/packages/image-captcha/src/types.ts:45:0-52:2) 里没有 `purpose` 字段，服务端也没有比对“本次验证用途”是否一致。
+  - 结果是：你拿到任意 `id` 的 token，业务侧只要传入 `purpose`，[verifyToken()](cci:1://file:///e:/dragic-api/packages/image-captcha/src/captcha.service.ts:109:2-113:3) 会比对 payload 中的 purpose；但这里 payload 取自 storage 的 purpose，业务侧无法显式声明“我要验证 login 的 captcha”，并得到明确的 mismatch 错误（目前会变成业务侧比对失败）。
+  - 建议：[verifyCaptcha(payload)](cci:1://file:///e:/dragic-api/packages/image-captcha/src/captcha.service.ts:56:2-107:3) 入参带上 `purpose` 并做严格比对，错误码区分 `PURPOSE_MISMATCH`。
+- **[数据返回体过大/性能]**
+  - `bgUrl/puzzleUrl` 直接返回 base64 data URL：在大图或高并发下会增加带宽与内存压力。
+  - 生产常见做法：返回图片 CDN/对象存储 URL，或至少允许配置“返回 Buffer/流/临时 URL”。
+- **[存储写入缺少 try/catch]**
+  - [createCaptcha()](cci:1://file:///e:/dragic-api/packages/image-captcha/src/captcha.service.ts:24:2-54:3) 调用 [storage.set()](cci:1://file:///e:/dragic-api/packages/image-captcha/src/types.ts:14:2-14:62) 没有捕获并转换成 [StorageError](cci:2://file:///e:/dragic-api/packages/email-captcha/src/core/errors.ts:22:0-26:1)（而 [verifyCaptcha](cci:1://file:///e:/dragic-api/packages/image-captcha/src/captcha.service.ts:56:2-107:3) 有）。
+- **[轨迹检测规则可配置但未使用配置]**
+  - [CaptchaConfig](cci:2://file:///e:/dragic-api/packages/image-captcha/src/types.ts:0:0-11:1) 里有 `trailMinLength/durationMin/durationMax/sliderOffsetMin`，但 [trail-verifier.ts](cci:7://file:///e:/dragic-api/packages/image-captcha/src/core/trail-verifier.ts:0:0-0:0) 写死阈值（如 duration 100..15000、trail>=5、sliderOffsetX>=10），导致配置项名存实亡。
+- **[拼图生成实现风险]**
+  - [puzzle-generator.ts](cci:7://file:///e:/dragic-api/packages/image-captcha/src/core/puzzle-generator.ts:0:0-0:0) 里对 SVG path 的 `replace(/M/g, \`M ${x} ${y} l\`)` 这段非常脆弱（逻辑上是在“插入偏移+相对命令”，但对 path 字符串做全局替换容易出意外）。
+  - 目前能工作不代表未来改 path 后仍安全。
 
-### 1. 移除认证逻辑
+## 结论
+- **整体结构比 email-captcha 更合理（抽象了 storage/loader，模块化清晰）**，但需要补齐：
+  - purpose 的完整语义
+  - 配置项真正生效
+  - 输出形式与性能策略
 
-- 删除 `src/account/` 目录
-- 从 `app.module.ts` 移除 `AuthModule` 配置
-- 移除 `AuthService` 相关导入
+# 总体结论：是否合理、是否满足模块功能？
 
-### 2. 添加 JWT 验证
+## 是否能满足对应功能（回答你的核心问题）
+- **mail**：满足“能发 SMTP 邮件”的基础功能；对“可复用 mail 模块/生产级发信”不足。
+- **email-captcha**：满足“验证码生成-存储-验证-签 token”流程；但生产级需要补安全与注入 bug。
+- **image-captcha**：满足“拼图生成+轨迹校验+签 token”；但配置项未完全落地、purpose 语义欠缺、性能策略较粗。
 
-创建了 `/src/guards` 目录：
-- `jwt-auth.guard.ts` - JWT 认证守卫
-- `jwt.strategy.ts` - JWT 策略
-- `index.ts` - 导出文件
+## 优先级最高的改进点（建议你优先处理）
+- **[P0] email-captcha 的 [MailService](cci:2://file:///e:/dragic-api/packages/mail/src/mail.service.ts:4:0-126:1) 注入 token 错误**（`inject: ['MailService']` 很可能导致注入失败）。
+- **[P0] email-captcha 增加验证次数限制/发送频率限制**（否则公开接口很危险）。
+- **[P1] image-captcha 的轨迹阈值使用 [CaptchaConfig](cci:2://file:///e:/dragic-api/packages/image-captcha/src/types.ts:0:0-11:1)**（否则配置无意义）。
+- **[P1] image-captcha 增加 `purpose` 显式校验**（错误码清晰）。
+- **[P1] mail 模块改为可注入配置/transport/provider**（避免强耦合 env）。
 
-创建了 `/src/decorators` 目录：
-- `public.decorator.ts` - 公共接口装饰器
+---
 
-### 3. 全局 JWT 守卫
+如果你希望我进一步给出“是否满足你当前业务的功能定义”，我需要你补两点信息：  
+1) 这两个 captcha token 在业务里怎么被消费？（例如：登录/注册接口要求 `token+id+purpose` 吗？token 是否一次性？）  
+2) storage 实际用的是什么（Redis？内存？），以及是否暴露在多实例环境（水平扩展）？  
 
-在 `app.module.ts` 中配置：
-- 全局启用 `JwtAuthGuard`
-- 所有接口默认需要认证
-- 使用 `@Public()` 装饰器标记公共接口
-
-## 第三阶段：Nginx 代理配置
-
-### 1. 代理规则
-
-```nginx
-# 认证相关请求
-location ~ ^/(auth|oidc)/ {
-    proxy_pass http://auth_server;
-}
-
-# 业务 API
-location /api/ {
-    proxy_pass http://api_server;
-}
-```
-
-### 2. CORS 配置
-
-- 支持跨域请求
-- 处理 OPTIONS 预检请求
-- 传递 Authorization header
-
-### 3. 安全配置
-
-- HTTPS 支持
-- 安全头设置
-- 静态资源缓存
-
-## 部署说明
-
-### 1. 环境变量
-
-确保设置以下环境变量：
-
-**auth-server:**
-- `JWT_SECRET` - JWT 密钥
-- `DATABASE_URL` - 数据库连接
-- `REDIS_URL` - Redis 连接
-
-**dragic-api:**
-- `JWT_SECRET` - 与 auth-server 相同
-- `ENABLE_JWT_GUARD=true` - 启用 JWT 守卫
-
-### 2. Docker 部署
-
-使用 `docker-compose.yml` 一键部署：
-
-```bash
-docker-compose up -d
-```
-
-包含的服务：
-- PostgreSQL 数据库
-- Redis 缓存
-- MinIO 对象存储
-- auth-server (端口 3001)
-- dragic-api (端口 3000)
-- Nginx 代理 (端口 80/443)
-
-## 客户端调用示例
-
-### 1. 登录
-
-```javascript
-const response = await fetch('https://your-domain.com/auth/login', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-        email: 'user@example.com',
-        password: 'password123'
-    })
-});
-
-const { accessToken, refreshToken } = await response.json();
-```
-
-### 2. 调用业务 API
-
-```javascript
-const response = await fetch('https://your-domain.com/api/users', {
-    headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-    }
-});
-```
-
-### 3. 刷新 Token
-
-```javascript
-const response = await fetch('https://your-domain.com/auth/refresh', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-        refreshToken: 'your-refresh-token'
-    })
-});
-```
-
-## 迁移验证
-
-### 1. 功能测试
-
-- [ ] 用户注册功能
-- [ ] 用户登录功能
-- [ ] Token 刷新功能
-- [ ] 用户登出功能
-- [ ] 业务 API JWT 验证
-
-### 2. 集成测试
-
-- [ ] OIDC Discovery Document
-- [ ] OAuth 流程
-- [ ] 跨域请求
-- [ ] Nginx 代理转发
-
-### 3. 性能测试
-
-- [ ] 认证服务响应时间
-- [ ] 业务 API 响应时间
-- [ ] 并发请求处理
-
-## 注意事项
-
-1. **JWT 密钥一致性**：确保 auth-server 和 dragic-api 使用相同的 JWT_SECRET
-2. **数据库共享**：两个服务必须连接同一个数据库
-3. **缓存共享**：Redis 用于 session 和 token 缓存
-4. **日志监控**：分别监控两个服务的日志
-5. **负载均衡**：生产环境考虑多个实例部署
-
-## 后续优化
-
-1. **API Gateway**：考虑使用 Kong、Zuul 等 API Gateway
-2. **服务发现**：使用 Consul、Eureka 进行服务发现
-3. **配置中心**：使用 Nacos、Apollo 统一配置管理
-4. **链路追踪**：集成 Jaeger、Zipkin 进行分布式追踪
-5. **熔断降级**：使用 Hystrix、Sentinel 保护服务
+# 完成状态
+已完成对 [email-captcha](cci:7://file:///e:/dragic-api/packages/email-captcha:0:0-0:0) / [image-captcha](cci:7://file:///e:/dragic-api/packages/image-captcha:0:0-0:0) / [mail](cci:7://file:///e:/dragic-api/packages/mail:0:0-0:0) 的源码级结构评估，并给出可用性结论与高优先级风险点。
