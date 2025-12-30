@@ -1,7 +1,7 @@
 {
-  "name": "@dragic/image-captcha",
+  "name": "@dragic/email-captcha",
   "version": "0.0.1",
-  "description": "Image captcha library for Dragic monorepo",
+  "description": "Email captcha library for Dragic monorepo",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
+    "@dragic/mail": "workspace:*",
     "jsonwebtoken": "^9.0.2",
-    "nanoid": "^5.0.4",
-    "sharp": "^0.33.5"
+    "nanoid": "^5.0.4"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.5",
