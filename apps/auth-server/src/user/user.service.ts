@@ -1,6 +1,6 @@
 import { UserService as IUserService, OAuthUserProfile, ResourcePayload, UserPayload } from '@dragic/auth';
 import { DrizzleService, userAuthIdentities, UserRow, users } from '@dragic/database';
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
 @Injectable()
@@ -99,6 +99,46 @@ export class UserService implements IUserService<UserPayload> {
     }
 
     return this.toUserPayload(result[0]);
+  }
+
+  async updateUser(id: number, updateData: { name?: string; email?: string; phone?: string }) {
+    const [updatedUser] = await this.drizzle.db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+
+    if (!updatedUser) {
+      throw new BadRequestException('用户不存在');
+    }
+
+    return this.toUserPayload(updatedUser);
+  }
+
+  async changePassword(id: number, passwordData: { currentPassword: string; newPassword: string }) {
+    // 获取用户当前密码
+    const [user] = await this.drizzle.db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+
+    if (!user) {
+      throw new BadRequestException('用户不存在');
+    }
+
+    // 验证当前密码
+    if (user.password !== passwordData.currentPassword) {
+      throw new BadRequestException('当前密码错误');
+    }
+
+    // 更新密码
+    await this.drizzle.db
+      .update(users)
+      .set({ password: passwordData.newPassword })
+      .where(eq(users.id, id));
+
+    return { message: '密码修改成功' };
   }
 
   private toUserPayload(user: UserRow): UserPayload {
