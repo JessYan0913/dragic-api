@@ -1,25 +1,36 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Optional } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-local';
 import { Request } from 'express';
 import { OAuthService } from '../oauth/oauth.service';
 import { UserService, OAuthUserProfile } from '../interfaces/user.interface';
+import { OAuthStateStore } from '../oauth/oauth-state-store';
 
 @Injectable()
 export class OAuthStrategy extends PassportStrategy(Strategy, 'oauth') {
   constructor(
     private readonly oauthService: OAuthService,
     @Inject('UserService') private readonly userService: UserService,
+    @Optional() private readonly oauthStateStore?: OAuthStateStore,
   ) {
     super({
       usernameField: 'provider',
       passwordField: 'code',
+      passReqToCallback: true,
     });
   }
 
-  async validate(provider: string, code: string): Promise<any> {
+  async validate(req: Request, provider: string, code: string): Promise<any> {
     if (!provider || !code) {
       throw new Error('Missing provider or code in OAuth request');
+    }
+
+    const state = (req.body as any)?.state ?? (req.query as any)?.state;
+    if (this.oauthStateStore && typeof state === 'string' && state.length > 0) {
+      const ok = await this.oauthStateStore.consume(provider as any, state);
+      if (!ok) {
+        throw new Error('Invalid OAuth state');
+      }
     }
 
     try {

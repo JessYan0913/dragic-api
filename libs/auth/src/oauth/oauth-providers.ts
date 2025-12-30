@@ -4,8 +4,14 @@ import { OAuthProvider, OAuthUserProfile } from '../interfaces/user.interface';
 export interface OAuthConfig {
   clientId: string;
   clientSecret: string;
+  appId?: string;
+  appSecret?: string;
   redirectUri?: string;
   scope?: string;
+  authorizationEndpoint?: string;
+  accessTokenEndpoint?: string;
+  refreshTokenEndpoint?: string;
+  userInfoEndpoint?: string;
   [key: string]: any;
 }
 
@@ -33,38 +39,68 @@ export abstract class BaseOAuthProvider {
 
 @Injectable()
 export class FeishuOAuthProvider extends BaseOAuthProvider {
+  private getAppId(): string {
+    return this.config.appId || this.config.clientId;
+  }
+
+  private getAppSecret(): string {
+    return this.config.appSecret || this.config.clientSecret;
+  }
+
+  private getRedirectUri(): string {
+    if (!this.config.redirectUri) {
+      throw new Error('Feishu OAuth redirectUri is required');
+    }
+    return this.config.redirectUri;
+  }
+
   getProviderName(): OAuthProvider {
     return 'feishu';
   }
 
   getAuthorizationUrl(state?: string): string {
-    const baseUrl = 'https://open.feishu.cn/open-apis/authen/v1/authorize';
+    const baseUrl = this.config.authorizationEndpoint || 'https://open.feishu.cn/open-apis/authen/v1/index';
     const params = new URLSearchParams({
-      app_id: this.config.clientId,
-      redirect_uri: this.config.redirectUri,
+      app_id: this.getAppId(),
+      redirect_uri: this.getRedirectUri(),
       response_type: 'code',
-      scope: this.config.scope || 'contact:base',
       state: state || '',
     });
+
+    const scope = this.config.scope;
+    if (scope) {
+      params.set('scope', scope);
+    }
+
     return `${baseUrl}?${params.toString()}`;
   }
 
   async exchangeCodeForToken(code: string): Promise<OAuthAccessToken> {
-    const response = await fetch('https://open.feishu.cn/open-apis/authen/v1/access_token', {
+    const response = await fetch(this.config.accessTokenEndpoint || 'https://open.feishu.cn/open-apis/authen/v1/access_token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         grant_type: 'authorization_code',
+        app_id: this.getAppId(),
+        app_secret: this.getAppSecret(),
         client_id: this.config.clientId,
         client_secret: this.config.clientSecret,
         code: code,
-        redirect_uri: this.config.redirectUri,
+        redirect_uri: this.getRedirectUri(),
       }),
     });
 
-    const data = await response.json();
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(`Feishu OAuth HTTP error: ${response.status} ${response.statusText}${text ? ` - ${text}` : ''}`);
+    }
+
+    const data = await response.json().catch(() => null);
+    if (!data) {
+      throw new Error('Feishu OAuth error: invalid JSON response');
+    }
     if (data.code !== 0) {
       throw new Error(`Feishu OAuth error: ${data.msg}`);
     }
@@ -78,14 +114,22 @@ export class FeishuOAuthProvider extends BaseOAuthProvider {
   }
 
   async getUserInfo(accessToken: string, _extra?: string): Promise<OAuthUserProfile> {
-    const response = await fetch('https://open.feishu.cn/open-apis/authen/v1/user_info', {
+    const response = await fetch(this.config.userInfoEndpoint || 'https://open.feishu.cn/open-apis/authen/v1/user_info', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
       },
     });
 
-    const data = await response.json();
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(`Feishu user info HTTP error: ${response.status} ${response.statusText}${text ? ` - ${text}` : ''}`);
+    }
+
+    const data = await response.json().catch(() => null);
+    if (!data) {
+      throw new Error('Feishu user info error: invalid JSON response');
+    }
     if (data.code !== 0) {
       throw new Error(`Feishu user info error: ${data.msg}`);
     }
@@ -105,18 +149,28 @@ export class FeishuOAuthProvider extends BaseOAuthProvider {
   }
 
   async refreshToken(refreshToken: string): Promise<OAuthAccessToken> {
-    const response = await fetch('https://open.feishu.cn/open-apis/authen/v1/refresh_access_token', {
+    const response = await fetch(this.config.refreshTokenEndpoint || 'https://open.feishu.cn/open-apis/authen/v1/refresh_access_token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         grant_type: 'refresh_token',
+        app_id: this.getAppId(),
+        app_secret: this.getAppSecret(),
         refresh_token: refreshToken,
       }),
     });
 
-    const data = await response.json();
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(`Feishu refresh token HTTP error: ${response.status} ${response.statusText}${text ? ` - ${text}` : ''}`);
+    }
+
+    const data = await response.json().catch(() => null);
+    if (!data) {
+      throw new Error('Feishu refresh token error: invalid JSON response');
+    }
     if (data.code !== 0) {
       throw new Error(`Feishu refresh token error: ${data.msg}`);
     }

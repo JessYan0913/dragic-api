@@ -11,3 +11,4 @@ export * from './interfaces/user.interface';
 export * from './strategies/oauth.strategy';
 export * from './oauth/oauth.service';
 export * from './oauth/oauth-providers';
+export * from './oauth/oauth-state-store';

@@ -1,4 +1,4 @@
-import { DynamicModule, Module, Type } from '@nestjs/common';
+import { DynamicModule, Module, Provider, Type } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule, JwtSignOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -10,6 +10,7 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { OAuthStrategy } from './strategies/oauth.strategy';
 import { OAuthService, OAuthProvidersConfig } from './oauth/oauth.service';
 import { UserService } from './interfaces/user.interface';
+import { MemoryOAuthStateStore, OAUTH_STATE_STORE, OAuthStateStore } from './oauth/oauth-state-store';
 
 export interface ForRootOptions {
   jwt: {
@@ -20,11 +21,12 @@ export interface ForRootOptions {
   enableResourceGuard: boolean;
   userService: Type;
   oauth?: OAuthProvidersConfig;
+  oauthStateStoreProvider?: Provider<OAuthStateStore>;
 }
 
 @Module({})
 export class AuthModule {
-  static forRoot({ userService, enableJwtGuard, enableResourceGuard, jwt, oauth }: ForRootOptions): DynamicModule {
+  static forRoot({ userService, enableJwtGuard, enableResourceGuard, jwt, oauth, oauthStateStoreProvider }: ForRootOptions): DynamicModule {
     const providers = [
       AuthService,
       LocalStrategy,
@@ -37,15 +39,21 @@ export class AuthModule {
 
     // 如果配置了 OAuth，添加相关服务
     if (oauth) {
+      const stateStoreProvider: Provider<OAuthStateStore> =
+        oauthStateStoreProvider || ({ provide: OAUTH_STATE_STORE, useFactory: () => new MemoryOAuthStateStore() } as any);
+
       providers.push(
+        stateStoreProvider as any,
         {
           provide: OAuthService,
-          useFactory: () => new OAuthService(oauth),
+          useFactory: (store: OAuthStateStore) => new (OAuthService as any)(oauth, store),
+          inject: [OAUTH_STATE_STORE],
         } as any,
         {
           provide: OAuthStrategy,
-          useFactory: (oauthService: OAuthService, userService: UserService) => new OAuthStrategy(oauthService, userService),
-          inject: [OAuthService, 'UserService'],
+          useFactory: (oauthService: OAuthService, userService: UserService, store: OAuthStateStore) =>
+            new (OAuthStrategy as any)(oauthService, userService, store),
+          inject: [OAuthService, 'UserService', OAUTH_STATE_STORE],
         } as any,
       );
     }

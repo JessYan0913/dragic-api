@@ -2,6 +2,7 @@ import { Injectable, Optional } from '@nestjs/common';
 import { BaseOAuthProvider, OAuthConfig } from './oauth-providers';
 import { FeishuOAuthProvider } from './oauth-providers';
 import { OAuthProvider } from '../interfaces/user.interface';
+import { OAuthStateStore } from './oauth-state-store';
 
 export interface OAuthProvidersConfig {
   feishu?: OAuthConfig;
@@ -12,7 +13,10 @@ export interface OAuthProvidersConfig {
 export class OAuthService {
   private readonly providers: Map<OAuthProvider, BaseOAuthProvider> = new Map();
 
-  constructor(@Optional() private readonly config?: OAuthProvidersConfig) {
+  constructor(
+    @Optional() private readonly config?: OAuthProvidersConfig,
+    @Optional() private readonly stateStore?: OAuthStateStore,
+  ) {
     this.initializeProviders();
   }
 
@@ -34,6 +38,19 @@ export class OAuthService {
 
   getAuthorizationUrl(provider: OAuthProvider, state?: string): string {
     return this.getProvider(provider).getAuthorizationUrl(state);
+  }
+
+  async createState(provider: OAuthProvider, meta?: string): Promise<string> {
+    if (!this.stateStore) {
+      throw new Error('OAuth state store is not configured');
+    }
+    return this.stateStore.create(provider, meta);
+  }
+
+  async getAuthorizationUrlWithState(provider: OAuthProvider, meta?: string): Promise<{ url: string; state: string }> {
+    const state = await this.createState(provider, meta);
+    const url = this.getAuthorizationUrl(provider, state);
+    return { url, state };
   }
 
   async exchangeCodeForToken(provider: OAuthProvider, code: string) {
