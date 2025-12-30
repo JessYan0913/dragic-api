@@ -1,7 +1,7 @@
 # compiled output
-/dist
-/node_modules
-/build
+dist
+node_modules
+build
 
 # Logs
 logs
@@ -27,7 +27,7 @@ lerna-debug.log*
 *.launch
 .settings/
 *.sublime-workspace
-*.yaml
+# *.yaml - removed to allow pnpm-workspace.yaml
 
 # IDE - VSCode
 .vscode/*
@@ -45,6 +45,9 @@ lerna-debug.log*
 # temp directory
 .temp
 .tmp
+
+# Turbo build cache
+.turbo
 
 # Runtime data
 pids

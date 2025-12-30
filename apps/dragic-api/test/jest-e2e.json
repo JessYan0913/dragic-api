@@ -1,0 +1,21 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".e2e-spec.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "@dragic/storage/(.*)": "<rootDir>/../../packages/storage/src/$1",
+    "@dragic/storage": "<rootDir>/../../packages/storage/src",
+    "@dragic/auth/(.*)": "<rootDir>/../../packages/auth/src/$1",
+    "@dragic/auth": "<rootDir>/../../packages/auth/src",
+    "@dragic/database/(.*)": "<rootDir>/../../packages/database/src/$1",
+    "@dragic/database": "<rootDir>/../../packages/database/src",
+    "@dragic/cache/(.*)": "<rootDir>/../../packages/cache/src/$1",
+    "@dragic/cache": "<rootDir>/../../packages/cache/src",
+    "@dragic/common/(.*)": "<rootDir>/../../packages/common/src/$1",
+    "@dragic/common": "<rootDir>/../../packages/common/src"
+  }
+}

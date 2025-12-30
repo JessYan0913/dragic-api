@@ -1,36 +1,21 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "module": "commonjs",
-    "declaration": true,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "target": "ES2021",
-    "sourceMap": true,
-    "outDir": "./dist",
     "baseUrl": ".",
-    "incremental": true,
-    "skipLibCheck": true,
-    "strictNullChecks": false,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@/*": ["src/*"],
-      "@pictode-api/storage": ["libs/storage/src"],
-      "@pictode-api/storage/*": ["libs/storage/src/*"],
-      "@pictode-api/auth": ["libs/auth/src"],
-      "@pictode-api/auth/*": ["libs/auth/src/*"],
-      "@pictode-api/drizzle": ["libs/drizzle/src"],
-      "@pictode-api/drizzle/*": ["libs/drizzle/src/*"],
-      "@pictode-api/cache": ["libs/cache/src"],
-      "@pictode-api/cache/*": ["libs/cache/src/*"],
-      "@pictode-api/queue": ["libs/queue/src"],
-      "@pictode-api/queue/*": ["libs/queue/src/*"],
-      "@pictode-api/rate-limit": ["libs/rate-limit/src"],
-      "@pictode-api/rate-limit/*": ["libs/rate-limit/src/*"]
+      "@dragic/auth": ["packages/auth/src"],
+      "@dragic/auth/*": ["packages/auth/src/*"],
+      "@dragic/cache": ["packages/cache/src"],
+      "@dragic/cache/*": ["packages/cache/src/*"],
+      "@dragic/common": ["packages/common/src"],
+      "@dragic/common/*": ["packages/common/src/*"],
+      "@dragic/database": ["packages/database/src"],
+      "@dragic/database/*": ["packages/database/src/*"],
+      "@dragic/queue": ["packages/queue/src"],
+      "@dragic/queue/*": ["packages/queue/src/*"],
+      "@dragic/storage": ["packages/storage/src"],
+      "@dragic/storage/*": ["packages/storage/src/*"]
     }
-  }
+  },
+  "exclude": ["node_modules", "dist"]
 }

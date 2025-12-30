@@ -1,85 +1,139 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Dragic Monorepo
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+统一身份认证中心 (IdP) 和 API 服务的 Monorepo 项目。
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 项目结构
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
-
-```bash
-$ pnpm install
+```
+dragic-monorepo/
+├── apps/
+│   ├── dragic-api/        # 主业务 API 服务
+│   └── auth-server/       # 统一认证中心 (IdP + OIDC)
+├── packages/
+│   ├── auth/              # 认证模块 (JWT, OAuth, Passport)
+│   ├── cache/             # 缓存模块 (Redis, Vercel KV)
+│   ├── common/            # 公共工具和类型
+│   ├── database/          # 数据库模块 (Drizzle ORM)
+│   ├── queue/             # 队列模块 (BullMQ)
+│   └── storage/           # 存储模块 (MinIO, Vercel Blob)
+├── pnpm-workspace.yaml
+├── turbo.json
+└── package.json
 ```
 
-## Compile and run the project
+## 快速开始
+
+### 前置要求
+
+- Node.js >= 18
+- pnpm >= 9.0
+- PostgreSQL 数据库
+- Redis (可选，用于缓存和队列)
+
+### 安装
 
 ```bash
-# development
-$ pnpm run start
+# 全局安装工具
+npm install -g pnpm turbo
 
-# watch mode
-$ pnpm run start:dev
+# 安装依赖
+pnpm install
 
-# production mode
-$ pnpm run start:prod
+# 构建所有包
+pnpm build:packages
 ```
 
-## Run tests
+### 开发
 
 ```bash
-# unit tests
-$ pnpm run test
+# 启动所有服务
+pnpm dev
 
-# e2e tests
-$ pnpm run test:e2e
+# 只启动 API 服务
+pnpm dev:api
 
-# test coverage
-$ pnpm run test:cov
+# 只启动认证服务
+pnpm dev:auth
 ```
 
-## Resources
+### 数据库操作
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+# 生成迁移
+pnpm db:generate
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+# 执行迁移
+pnpm db:migrate
 
-## Support
+# 推送 schema 到数据库
+pnpm db:push
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# 打开 Drizzle Studio
+pnpm db:studio
+```
 
-## Stay in touch
+## 应用说明
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### dragic-api
+
+主业务 API 服务，处理核心业务逻辑。
+
+- 端口: `3000` (默认)
+- 依赖: `@dragic/auth`, `@dragic/database`, `@dragic/cache`, `@dragic/storage`
+
+### auth-server
+
+统一认证中心，实现 OIDC 协议，支持：
+
+- 飞书登录
+- 手机号登录
+- OIDC 标准接口 (用于 NocoDB 等第三方集成)
+
+**OIDC 端点:**
+
+- `GET /.well-known/openid-configuration` - 发现文档
+- `GET /oidc/authorize` - 授权端点
+- `POST /oidc/token` - 令牌端点
+- `GET /oidc/userinfo` - 用户信息端点
+
+- 端口: `3001` (默认)
+
+## 环境变量
+
+复制 `.env.example` 到 `.env` 并配置：
+
+```bash
+cp .env.example .env
+```
+
+主要配置项：
+
+- `DATABASE_URL` - PostgreSQL 连接字符串
+- `JWT_SECRET` - JWT 签名密钥
+- `FEISHU_APP_ID` / `FEISHU_APP_SECRET` - 飞书应用凭据
+- `NOCODB_CLIENT_ID` / `NOCODB_CLIENT_SECRET` - NocoDB OIDC 客户端
+
+## NocoDB 集成
+
+1. 部署 auth-server
+2. 配置 NocoDB 环境变量：
+
+```bash
+NC_AUTH_OIDC_ENABLED=true
+NC_AUTH_OIDC_ISSUER_BASE_URL=http://your-auth-server:3001
+```
+
+3. 用户登录 Agent 平台后可无感访问 NocoDB
+
+## 技术栈
+
+- **框架**: NestJS 10
+- **数据库**: PostgreSQL + Drizzle ORM
+- **缓存**: Redis / Vercel KV
+- **存储**: MinIO / Vercel Blob
+- **认证**: Passport.js + JWT + OAuth2
+- **构建**: Turborepo + pnpm workspaces
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+MIT
