@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { DrizzleService, users } from '@dragic/database';
+import { MailService, MailTemplate } from '@dragic/mail';
+import { welcomeTemplate } from './templates/welcome.template';
 import { eq } from 'drizzle-orm';
 
 @Injectable()
@@ -8,6 +10,7 @@ export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly drizzle: DrizzleService,
+    private readonly mailService: MailService,
   ) {}
 
   async register(userData: { name: string; email: string; password: string }) {
@@ -31,6 +34,21 @@ export class AuthService {
         password: userData.password, // 实际应用中应该加密
       })
       .returning();
+
+    // 发送欢迎邮件
+    try {
+      await this.mailService.sendTemplate(
+        newUser.email,
+        welcomeTemplate,
+        {
+          name: newUser.name,
+          loginUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login`,
+        }
+      );
+    } catch (error) {
+      console.error('发送欢迎邮件失败:', error);
+      // 不阻塞注册流程，只记录错误
+    }
 
     return {
       id: newUser.id,

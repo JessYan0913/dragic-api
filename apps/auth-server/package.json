@@ -19,6 +19,7 @@
     "@dragic/cache": "workspace:*",
     "@dragic/common": "workspace:*",
     "@dragic/database": "workspace:*",
+    "@dragic/mail": "workspace:*",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.2.3",
     "@nestjs/core": "^10.0.0",

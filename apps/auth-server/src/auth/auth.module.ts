@@ -3,9 +3,10 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UserModule } from '../user/user.module';
 import { DrizzleModule } from '@dragic/database';
+import { MailModule } from '@dragic/mail';
 
 @Module({
-  imports: [UserModule, DrizzleModule],
+  imports: [UserModule, DrizzleModule, MailModule],
   controllers: [AuthController],
   providers: [
     {
