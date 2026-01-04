@@ -1,4 +1,4 @@
-import { Module, DynamicModule } from '@nestjs/common';
+import { Module, DynamicModule, Global } from '@nestjs/common';
 import { CaptchaService } from './captcha.service';
 import { CaptchaConfig, Storage, ImageLoader } from './types';
 
@@ -15,9 +15,10 @@ export interface CaptchaModuleOptions {
   secret?: string;
 }
 
+@Global()
 @Module({})
 export class CaptchaModule {
-  static register(options: CaptchaModuleOptions): DynamicModule {
+  static forRoot(options: CaptchaModuleOptions): DynamicModule {
     const captchaConfig: CaptchaConfig = {
       storage: options.storage,
       imageLoader: options.imageLoader,
@@ -32,6 +33,7 @@ export class CaptchaModule {
     };
 
     return {
+      global: true,
       module: CaptchaModule,
       providers: [
         {
@@ -40,7 +42,6 @@ export class CaptchaModule {
         },
       ],
       exports: [CaptchaService],
-      global: true,
     };
   }
 
@@ -49,6 +50,7 @@ export class CaptchaModule {
     inject?: any[];
   }): DynamicModule {
     return {
+      global: true,
       module: CaptchaModule,
       providers: [
         {
@@ -72,7 +74,6 @@ export class CaptchaModule {
         },
       ],
       exports: [CaptchaService],
-      global: true,
     };
   }
 }

@@ -1,4 +1,4 @@
-import { Module, DynamicModule } from '@nestjs/common';
+import { Module, DynamicModule, Global } from '@nestjs/common';
 import { EmailCaptchaService } from './email-captcha.service';
 import { EmailCaptchaConfig } from './types';
 import { MailConfig, MailModule } from '@dragic/mail';
@@ -16,9 +16,10 @@ export interface EmailCaptchaModuleOptions {
   mailConfig?: MailConfig;
 }
 
+@Global()
 @Module({})
 export class EmailCaptchaModule {
-  static register(options: EmailCaptchaModuleOptions): DynamicModule {
+  static forRoot(options: EmailCaptchaModuleOptions): DynamicModule {
     const emailCaptchaConfig: EmailCaptchaConfig = {
       storage: options.storage,
       codeLength: options.codeLength || 6,
@@ -35,6 +36,7 @@ export class EmailCaptchaModule {
     }
 
     return {
+      global: true,
       module: EmailCaptchaModule,
       imports,
       providers: [
@@ -45,7 +47,6 @@ export class EmailCaptchaModule {
         },
       ],
       exports: [EmailCaptchaService],
-      global: true,
     };
   }
 
@@ -54,6 +55,7 @@ export class EmailCaptchaModule {
     inject?: any[];
   }): DynamicModule {
     return {
+      global: true,
       module: EmailCaptchaModule,
       imports: [],
       providers: [
@@ -80,7 +82,6 @@ export class EmailCaptchaModule {
         },
       ],
       exports: [EmailCaptchaService],
-      global: true,
     };
   }
 }

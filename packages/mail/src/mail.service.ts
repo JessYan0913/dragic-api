@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import * as Handlebars from 'handlebars';
 import { MailConfig, MailOptions, MailTemplate } from './interfaces/mail.interface';
 import { MAIL_CONFIG, MAIL_PROVIDER } from './mail.constants';
@@ -14,6 +14,8 @@ import { MailProvider } from './providers/mail.provider';
 
 @Injectable()
 export class MailService {
+  private readonly logger = new Logger(MailService.name);
+
   constructor(
     @Inject(MAIL_CONFIG) private readonly config: MailConfig,
     @Inject(MAIL_PROVIDER) private readonly provider: MailProvider
@@ -28,12 +30,12 @@ export class MailService {
       this.validateMailOptions(options);
 
       const messageId = await this.provider.sendMail(options);
-      console.log('邮件发送成功:', messageId);
+      this.logger.log(`邮件发送成功: ${messageId}`);
 
       return messageId;
     } catch (error) {
       const mailError = this.mapErrorToTypedError(error);
-      console.error('邮件发送失败:', mailError);
+      this.logger.error('邮件发送失败:', mailError);
       throw mailError;
     }
   }
@@ -98,10 +100,10 @@ export class MailService {
   async verifyConnection(): Promise<boolean> {
     try {
       await this.provider.verifyConnection();
-      console.log('SMTP 连接验证成功');
+      this.logger.log('SMTP 连接验证成功');
       return true;
     } catch (error) {
-      console.error('SMTP 连接验证失败:', error);
+      this.logger.error('SMTP 连接验证失败:', error);
       return false;
     }
   }

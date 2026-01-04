@@ -24,12 +24,8 @@ export class MailModule {
           useExisting: SmtpMailProvider,
         },
         MailService,
-        {
-          provide: 'MailService',
-          useExisting: MailService,
-        },
       ],
-      exports: [configProvider, SmtpMailProvider, MAIL_PROVIDER, MailService, 'MailService'],
+      exports: [configProvider, SmtpMailProvider, MAIL_PROVIDER, MailService],
     };
   }
 
@@ -54,12 +50,8 @@ export class MailModule {
           useExisting: SmtpMailProvider,
         },
         MailService,
-        {
-          provide: 'MailService',
-          useExisting: MailService,
-        },
       ],
-      exports: [configProvider, SmtpMailProvider, MAIL_PROVIDER, MailService, 'MailService'],
+      exports: [configProvider, SmtpMailProvider, MAIL_PROVIDER, MailService],
     };
   }
 }
