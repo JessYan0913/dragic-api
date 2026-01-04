@@ -3,6 +3,9 @@ dist
 node_modules
 build
 
+# TypeScript incremental compilation cache
+*.tsbuildinfo
+
 # Logs
 logs
 *.log
