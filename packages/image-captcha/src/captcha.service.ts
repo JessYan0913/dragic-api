@@ -1,3 +1,4 @@
+import { Injectable, Logger } from '@nestjs/common';
 import { sign, verify } from 'jsonwebtoken';
 import { nanoid } from 'nanoid';
 
@@ -19,7 +20,10 @@ interface TokenPayload {
   purpose: string;
 }
 
+@Injectable()
 export class CaptchaService implements CaptchaServiceInterface {
+  private readonly logger = new Logger(CaptchaService.name);
+
   constructor(private config: CaptchaConfig) {}
 
   async createCaptcha(options: CreateCaptchaPayload): Promise<CreateCaptchaResult> {
@@ -31,31 +35,45 @@ export class CaptchaService implements CaptchaServiceInterface {
       purpose,
     } = options;
 
-    const imgPath = await this.config.imageLoader.pickRandomImagePath();
+    this.logger.log(`创建图片验证码，用途: ${purpose}, 尺寸: ${bgWidth}x${bgHeight}`);
 
-    const puzzle = await createPuzzle({
-      imgUrl: imgPath,
-      bgWidth,
-      bgHeight,
-      width,
-      height,
-    });
+    try {
+      const imgPath = await this.config.imageLoader.pickRandomImagePath();
+      this.logger.log(`选择图片路径: ${imgPath}`);
 
-    const id = nanoid();
-    const key = `captcha:${id}:data`;
-    const data: CaptchaData = { x: puzzle.x, purpose };
-    await this.config.storage.set(key, JSON.stringify(data), this.config.ttl);
+      const puzzle = await createPuzzle({
+        imgUrl: imgPath,
+        bgWidth,
+        bgHeight,
+        width,
+        height,
+      });
 
-    const bgMime = 'image/jpeg';
-    const puzzleMime = 'image/svg+xml';
-    const bgUrl = `data:${bgMime};base64,${puzzle.bg.toString('base64')}`;
-    const puzzleUrl = `data:${puzzleMime};base64,${puzzle.puzzle.toString('base64')}`;
+      const id = nanoid();
+      const key = `captcha:${id}:data`;
+      const data: CaptchaData = { x: puzzle.x, purpose };
+      
+      await this.config.storage.set(key, JSON.stringify(data), this.config.ttl);
+      this.logger.log(`验证码数据已存储，ID: ${id}, TTL: ${this.config.ttl}秒`);
 
-    return { id, bgUrl, puzzleUrl };
+      const bgMime = 'image/jpeg';
+      const puzzleMime = 'image/svg+xml';
+      const bgUrl = `data:${bgMime};base64,${puzzle.bg.toString('base64')}`;
+      const puzzleUrl = `data:${puzzleMime};base64,${puzzle.puzzle.toString('base64')}`;
+
+      this.logger.log(`图片验证码创建成功: ${id}`);
+      return { id, bgUrl, puzzleUrl };
+    } catch (error) {
+      this.logger.error(`创建图片验证码失败: ${error.message}`);
+      throw error;
+    }
   }
 
   async verifyCaptcha(body: VerifyTrailPayload): Promise<VerifyCaptchaResult> {
+    this.logger.log(`验证图片验证码，ID: ${body.id}`);
+    
     if (!body || !Array.isArray(body.trail)) {
+      this.logger.warn(`验证码载荷无效: ${JSON.stringify(body)}`);
       throw new ValidationError('Invalid captcha payload');
     }
 
@@ -64,6 +82,7 @@ export class CaptchaService implements CaptchaServiceInterface {
     let expectedXFromStore: number | null = null;
     let storedPurpose: string | null = null;
     const id = body.id;
+    
     try {
       const key = `captcha:${id}:data`;
       const stored = await this.config.storage.get(key);
@@ -71,19 +90,27 @@ export class CaptchaService implements CaptchaServiceInterface {
         const data: CaptchaData = JSON.parse(stored);
         expectedXFromStore = data.x;
         storedPurpose = data.purpose;
+        this.logger.log(`获取验证码数据成功: ${id}, 期望X坐标: ${expectedXFromStore}`);
+      } else {
+        this.logger.warn(`验证码数据不存在: ${id}`);
       }
     } catch (error) {
+      this.logger.error(`获取验证码数据失败: ${error.message}`);
       throw new StorageError(`Failed to retrieve captcha data: ${error}`);
     }
 
     // 当服务端存有期望值时，严格比对
     if (expectedXFromStore != null && Number.isFinite(body.x)) {
       const diff = Math.abs(body.x - expectedXFromStore);
+      this.logger.log(`X坐标比对，提交: ${body.x}, 期望: ${expectedXFromStore}, 差值: ${diff}`);
+      
       if (diff > this.config.trailTolerance) {
+        this.logger.warn(`X坐标超出容差范围: ${diff} > ${this.config.trailTolerance}`);
         throw new CaptchaError('expected_x_mismatch', 'EXPECTED_X_MISMATCH');
       }
     } else {
       // 未找到或已过期
+      this.logger.warn(`验证码不存在或已过期: ${id}`);
       throw new CaptchaNotFoundError();
     }
 
@@ -91,25 +118,46 @@ export class CaptchaService implements CaptchaServiceInterface {
     if (!result.ok) {
       // 将判定原因透出到错误 message，code 标记为通用失败
       const reason = result.reasons?.[0] ?? 'verification_failed';
+      this.logger.warn(`轨迹验证失败: ${reason}`);
       throw new CaptchaError(reason, 'VERIFICATION_FAILED');
     }
 
     if (storedPurpose) {
       try {
         await this.config.storage.del(`captcha:${id}:data`);
+        this.logger.log(`验证码数据已删除: ${id}`);
       } catch (error) {
+        this.logger.error(`删除验证码数据失败: ${error.message}`);
         throw new StorageError(`Failed to delete captcha data: ${error}`);
       }
     }
+    
     const token = sign({ id, purpose: storedPurpose || '' }, this.config.secret, {
       expiresIn: `${Math.floor(this.config.ttl / 60)}m`,
     });
+    
+    this.logger.log(`图片验证码验证成功: ${id}`);
     return { id, token };
   }
 
   async verifyToken(id: string, token: string, purpose: string): Promise<boolean> {
-    const result = verify(token, this.config.secret);
-    const payload = result as TokenPayload;
-    return payload.id === id && payload.purpose === purpose;
+    this.logger.log(`验证token: ${id}, 用途: ${purpose}`);
+    
+    try {
+      const result = verify(token, this.config.secret);
+      const payload = result as TokenPayload;
+      const isValid = payload.id === id && payload.purpose === purpose;
+      
+      if (isValid) {
+        this.logger.log(`Token验证成功: ${id}`);
+      } else {
+        this.logger.warn(`Token验证失败: ${id}`);
+      }
+      
+      return isValid;
+    } catch (error) {
+      this.logger.error(`Token验证异常: ${error.message}`);
+      return false;
+    }
   }
 }
