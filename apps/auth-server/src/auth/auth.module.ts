@@ -6,7 +6,20 @@ import { DrizzleModule } from '@dragic/database';
 import { MailModule } from '@dragic/mail';
 
 @Module({
-  imports: [UserModule, DrizzleModule, MailModule],
+  imports: [
+    UserModule,
+    DrizzleModule,
+    MailModule.forRoot({
+      host: process.env.SMTP_HOST as string,
+      port: parseInt(process.env.SMTP_PORT || '587', 10),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER as string,
+        pass: process.env.SMTP_PASS as string,
+      },
+      from: process.env.SMTP_FROM,
+    }),
+  ],
   controllers: [AuthController],
   providers: [
     {

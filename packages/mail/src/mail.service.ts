@@ -1,65 +1,54 @@
-import { Injectable } from '@nestjs/common';
-import { createTransport, Transporter } from 'nodemailer';
-import { MailOptions, MailTemplate } from './interfaces/mail.interface';
+import { Inject, Injectable } from '@nestjs/common';
+import * as Handlebars from 'handlebars';
+import { MailConfig, MailOptions, MailTemplate } from './interfaces/mail.interface';
+import { MAIL_CONFIG, MAIL_PROVIDER } from './mail.constants';
+import {
+  MailAuthenticationError,
+  MailConnectionError,
+  MailError,
+  MailRateLimitError,
+  MailTimeoutError,
+  MailValidationError,
+} from './errors/mail.errors';
+import { MailProvider } from './providers/mail.provider';
 
 @Injectable()
 export class MailService {
-  private transporter: Transporter;
-
-  constructor() {
-    this.transporter = createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-  }
+  constructor(
+    @Inject(MAIL_CONFIG) private readonly config: MailConfig,
+    @Inject(MAIL_PROVIDER) private readonly provider: MailProvider
+  ) {}
 
   /**
    * 发送邮件
    * @param options 邮件选项
    */
-  async sendMail(options: MailOptions): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  async sendMail(options: MailOptions): Promise<string> {
     try {
-      const mailOptions = {
-        from: options.from || process.env.SMTP_FROM || process.env.SMTP_USER,
-        to: options.to,
-        subject: options.subject,
-        text: options.text,
-        html: options.html,
-        attachments: options.attachments,
-      };
+      this.validateMailOptions(options);
 
-      const info = await this.transporter.sendMail(mailOptions);
-      console.log('邮件发送成功:', info.messageId);
-      
-      return {
-        success: true,
-        messageId: info.messageId,
-      };
+      const messageId = await this.provider.sendMail(options);
+      console.log('邮件发送成功:', messageId);
+
+      return messageId;
     } catch (error) {
-      console.error('邮件发送失败:', error);
-      return {
-        success: false,
-        error: error.message,
-      };
+      const mailError = this.mapErrorToTypedError(error);
+      console.error('邮件发送失败:', mailError);
+      throw mailError;
     }
   }
 
   /**
    * 发送文本邮件
    */
-  async sendText(to: string, subject: string, text: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  async sendText(to: string, subject: string, text: string): Promise<string> {
     return this.sendMail({ to, subject, text });
   }
 
   /**
    * 发送 HTML 邮件
    */
-  async sendHtml(to: string, subject: string, html: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  async sendHtml(to: string, subject: string, html: string): Promise<string> {
     return this.sendMail({ to, subject, html });
   }
 
@@ -69,18 +58,9 @@ export class MailService {
    * @param template 邮件模板对象
    * @param data 模板数据
    */
-  async sendTemplate(to: string, template: MailTemplate, data: Record<string, any>): Promise<{ success: boolean; messageId?: string; error?: string }> {
-    // 简单的模板替换，可以扩展为更复杂的模板引擎
-    let html = template.html;
-    let text = template.text;
-    
-    for (const [key, value] of Object.entries(data)) {
-      const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g');
-      html = html.replace(regex, String(value));
-      if (text) {
-        text = text.replace(regex, String(value));
-      }
-    }
+  async sendTemplate(to: string, template: MailTemplate, data: Record<string, any>): Promise<string> {
+    const html = Handlebars.compile(template.html)(data);
+    const text = template.text ? Handlebars.compile(template.text)(data) : undefined;
 
     return this.sendMail({ 
       to, 
@@ -100,14 +80,15 @@ export class MailService {
     recipients: string[], 
     template: MailTemplate, 
     dataList: Record<string, any>[]
-  ): Promise<Array<{ success: boolean; messageId?: string; error?: string; to: string }>> {
-    const results = [];
-    
+  ): Promise<Array<{ to: string; messageId: string }>> {
+    const results: Array<{ to: string; messageId: string }> = [];
+
     for (let i = 0; i < recipients.length; i++) {
-      const result = await this.sendTemplate(recipients[i], template, dataList[i] || {});
-      results.push({ ...result, to: recipients[i] });
+      const to = recipients[i];
+      const messageId = await this.sendTemplate(to, template, dataList[i] || {});
+      results.push({ to, messageId });
     }
-    
+
     return results;
   }
 
@@ -116,12 +97,70 @@ export class MailService {
    */
   async verifyConnection(): Promise<boolean> {
     try {
-      await this.transporter.verify();
+      await this.provider.verifyConnection();
       console.log('SMTP 连接验证成功');
       return true;
     } catch (error) {
       console.error('SMTP 连接验证失败:', error);
       return false;
     }
+  }
+
+  private validateMailOptions(options: MailOptions): void {
+    if (!options.to) {
+      throw new MailValidationError('收件人地址不能为空');
+    }
+    if (!options.subject) {
+      throw new MailValidationError('邮件主题不能为空');
+    }
+    if (!options.text && !options.html) {
+      throw new MailValidationError('邮件内容不能为空（需要 text 或 html）');
+    }
+    if (Array.isArray(options.to) && options.to.length === 0) {
+      throw new MailValidationError('收件人列表不能为空');
+    }
+  }
+
+  private mapErrorToTypedError(error: any): MailError {
+    if (error instanceof MailError) {
+      return error;
+    }
+
+    const errorMessage = error?.message || String(error);
+    const provider = `${this.config.host}:${this.config.port}`;
+
+    if (errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ENOTFOUND')) {
+      return new MailConnectionError(`无法连接到邮件服务器: ${errorMessage}`, provider);
+    }
+
+    if (
+      errorMessage.includes('535') ||
+      errorMessage.toLowerCase().includes('authentication') ||
+      errorMessage.toLowerCase().includes('invalid credentials')
+    ) {
+      return new MailAuthenticationError(`邮件服务器认证失败: ${errorMessage}`, provider);
+    }
+
+    if (
+      errorMessage.includes('421') ||
+      errorMessage.includes('452') ||
+      errorMessage.toLowerCase().includes('rate limit')
+    ) {
+      return new MailRateLimitError(`邮件发送频率受限: ${errorMessage}`, provider);
+    }
+
+    if (errorMessage.includes('ETIMEDOUT') || errorMessage.toLowerCase().includes('timeout')) {
+      return new MailTimeoutError(`邮件发送超时: ${errorMessage}`, provider);
+    }
+
+    if (
+      errorMessage.includes('550') ||
+      errorMessage.toLowerCase().includes('invalid address') ||
+      errorMessage.toLowerCase().includes('recipient')
+    ) {
+      return new MailValidationError(`收件人地址无效: ${errorMessage}`);
+    }
+
+    return new MailError(`邮件发送失败: ${errorMessage}`, 'MAIL_SEND_ERROR', true, provider);
   }
 }

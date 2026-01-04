@@ -1,7 +1,7 @@
 import { Module, DynamicModule } from '@nestjs/common';
 import { EmailCaptchaService } from './email-captcha.service';
 import { EmailCaptchaConfig } from './types';
-import { MailModule } from '@dragic/mail';
+import { MailConfig, MailModule } from '@dragic/mail';
 
 export interface EmailCaptchaModuleOptions {
   storage: {
@@ -13,6 +13,7 @@ export interface EmailCaptchaModuleOptions {
   ttl?: number;
   secret?: string;
   enableMail?: boolean;
+  mailConfig?: MailConfig;
 }
 
 @Module({})
@@ -27,7 +28,10 @@ export class EmailCaptchaModule {
 
     const imports = [];
     if (options.enableMail) {
-      imports.push(MailModule);
+      if (!options.mailConfig) {
+        throw new Error('mailConfig must be provided when enableMail is true');
+      }
+      imports.push(MailModule.forRoot(options.mailConfig));
     }
 
     return {
@@ -63,8 +67,13 @@ export class EmailCaptchaModule {
               ttl: emailCaptchaOptions.ttl || 300,
               secret: emailCaptchaOptions.secret || 'default-secret-change-in-production',
             };
-            
-            // 注意：在异步模式下，邮件服务需要手动提供
+
+            if (emailCaptchaOptions.enableMail) {
+              if (!emailCaptchaOptions.mailConfig) {
+                throw new Error('mailConfig must be provided when enableMail is true');
+              }
+            }
+
             return new EmailCaptchaService(emailCaptchaConfig);
           },
           inject: options.inject || [],
