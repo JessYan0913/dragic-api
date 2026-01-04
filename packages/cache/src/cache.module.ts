@@ -32,6 +32,8 @@ export class CacheModule {
           return new VercelService(options.config);
         }
 
+        console.log('[RedisService] Redis Client Config', options.config);
+
         return new RedisService(options.config);
       },
     };

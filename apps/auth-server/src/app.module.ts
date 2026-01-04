@@ -1,22 +1,24 @@
 import { AuthModule } from '@dragic/auth';
-import { CacheModule } from '@dragic/cache';
+import { Cache, CacheModule } from '@dragic/cache';
 import { DrizzleModule } from '@dragic/database';
-import { MailModule } from '@dragic/mail';
 import { EmailCaptchaModule } from '@dragic/email-captcha';
 import { CaptchaModule, LocalImageLoader } from '@dragic/image-captcha';
+import { MailModule } from '@dragic/mail';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { join } from 'path';
+import { AuthModule as LocalAuthModule } from './auth/auth.module';
 import { OidcModule } from './oidc/oidc.module';
 import { UserModule } from './user/user.module';
 import { UserService } from './user/user.service';
-import { AuthModule as LocalAuthModule } from './auth/auth.module';
-import { Cache } from '@dragic/cache';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: [join(process.cwd(), '..', '..', '.env.local'), join(__dirname, '.env.local')],
+    }),
     LoggerModule.forRootAsync({
       useFactory: () => {
         const isProduction = process.env.NODE_ENV === 'production';
@@ -53,7 +55,7 @@ import { Cache } from '@dragic/cache';
         : {
             service: 'redis',
             config: {
-              url: process.env.REDIS_URL ?? process.env.KV_URL ?? '',
+              url: process.env.REDIS_URL ?? '',
             },
           },
     ),
@@ -100,17 +102,7 @@ import { Cache } from '@dragic/cache';
             await cache.del(key);
           },
         },
-        enableMail: true,
-        mailConfig: {
-          host: process.env.MAIL_HOST || 'localhost',
-          port: parseInt(process.env.MAIL_PORT || '587'),
-          secure: process.env.MAIL_SECURE === 'true',
-          auth: {
-            user: process.env.MAIL_USER || '',
-            pass: process.env.MAIL_PASS || '',
-          },
-          from: process.env.MAIL_FROM || 'noreply@example.com',
-        },
+        enableMail: false,
         ttl: 300,
         secret: process.env.EMAIL_CAPTCHA_SECRET || 'default-secret',
       }),
@@ -118,10 +110,10 @@ import { Cache } from '@dragic/cache';
     }),
     AuthModule.forRoot({
       userService: UserService,
-      enableJwtGuard: false,
-      enableResourceGuard: false,
+      enableJwtGuard: process.env.ENABLE_JWT_GUARD !== 'false',
+      enableResourceGuard: process.env.ENABLE_RESOURCE_GUARD !== 'false',
       jwt: {
-        secret: process.env.JWT_SECRET,
+        secret: process.env.JWT_SECRET || 'fallback-secret',
         signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '1h' },
       },
       oauth: {

@@ -1,14 +1,13 @@
+import { JWTAuthGuard, JwtStrategy } from '@dragic/auth';
 import { CacheModule } from '@dragic/cache';
 import { DrizzleModule } from '@dragic/database';
 import { StorageModule } from '@dragic/storage';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { join } from 'path';
 import { UserModule } from './user/user.module';
-import { JwtStrategy } from '@dragic/auth';
-import { APP_GUARD } from '@nestjs/core';
-import { JWTAuthGuard } from '@dragic/auth';
 
 @Module({
   imports: [
@@ -87,7 +86,7 @@ import { JWTAuthGuard } from '@dragic/auth';
         : {
             service: 'redis',
             config: {
-              url: process.env.REDIS_URL ?? process.env.KV_URL ?? '',
+              url: process.env.REDIS_URL ?? '',
             },
           },
     ),

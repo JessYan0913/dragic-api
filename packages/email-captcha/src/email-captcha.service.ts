@@ -1,6 +1,6 @@
 import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
 import { sign, verify } from 'jsonwebtoken';
-import { nanoid } from 'nanoid';
+import { randomBytes } from 'crypto';
 import { MailService } from '@dragic/mail';
 
 import { CaptchaError, CaptchaNotFoundError, StorageError, ValidationError } from './errors/email-captcha.errors';
@@ -44,7 +44,7 @@ export class EmailCaptchaService implements EmailCaptchaServiceInterface {
     }
 
     const code = this.generateCode();
-    const id = nanoid();
+    const id = randomBytes(16).toString('hex');
     const key = `email-captcha:${id}`;
 
     try {

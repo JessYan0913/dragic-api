@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { sign, verify } from 'jsonwebtoken';
-import { nanoid } from 'nanoid';
+import { randomBytes } from 'crypto';
 
 import { CaptchaError, CaptchaNotFoundError, StorageError, ValidationError } from './core/errors';
 import { createPuzzle } from './core/puzzle-generator';
@@ -49,7 +49,7 @@ export class CaptchaService implements CaptchaServiceInterface {
         height,
       });
 
-      const id = nanoid();
+      const id = randomBytes(16).toString('hex');
       const key = `captcha:${id}:data`;
       const data: CaptchaData = { x: puzzle.x, purpose };
       

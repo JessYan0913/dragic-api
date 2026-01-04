@@ -32,7 +32,7 @@ export class AuthModule {
       LocalStrategy,
       {
         provide: JwtStrategy,
-        useFactory: () => new JwtStrategy(jwt.secret),
+        useFactory: () => new JwtStrategy(jwt.secret || 'default-jwt-secret'),
       },
       { provide: 'UserService', useClass: userService },
     ];
