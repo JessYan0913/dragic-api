@@ -1,6 +1,9 @@
 import { AuthModule } from '@dragic/auth';
 import { CacheModule } from '@dragic/cache';
 import { DrizzleModule } from '@dragic/database';
+import { MailModule } from '@dragic/mail';
+import { EmailCaptchaModule } from '@dragic/email-captcha';
+import { CaptchaModule, LocalImageLoader } from '@dragic/image-captcha';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
@@ -9,6 +12,7 @@ import { OidcModule } from './oidc/oidc.module';
 import { UserModule } from './user/user.module';
 import { UserService } from './user/user.service';
 import { AuthModule as LocalAuthModule } from './auth/auth.module';
+import { Cache } from '@dragic/cache';
 
 @Module({
   imports: [
@@ -53,6 +57,65 @@ import { AuthModule as LocalAuthModule } from './auth/auth.module';
             },
           },
     ),
+    MailModule.forRoot({
+      host: process.env.MAIL_HOST || 'localhost',
+      port: parseInt(process.env.MAIL_PORT || '587'),
+      secure: process.env.MAIL_SECURE === 'true',
+      auth: {
+        user: process.env.MAIL_USER || '',
+        pass: process.env.MAIL_PASS || '',
+      },
+      from: process.env.MAIL_FROM || 'noreply@example.com',
+    }),
+    CaptchaModule.forRootAsync({
+      useFactory: (cache: Cache) => ({
+        storage: {
+          set: async (key: string, value: string, ttl: number) => {
+            await cache.set(key, value, ttl);
+          },
+          get: async (key: string): Promise<string | null> => {
+            return await cache.get<string>(key);
+          },
+          del: async (key: string) => {
+            await cache.del(key);
+          },
+        },
+        imageLoader: new LocalImageLoader(join(process.cwd(), 'assets', 'captcha-images')),
+        defaultSize: { width: 300, height: 200 },
+        ttl: 300,
+        secret: process.env.CAPTCHA_SECRET || 'default-secret',
+      }),
+      inject: ['Cache'],
+    }),
+    EmailCaptchaModule.forRootAsync({
+      useFactory: (cache: Cache) => ({
+        storage: {
+          set: async (key: string, value: string, ttl: number) => {
+            await cache.set(key, value, ttl);
+          },
+          get: async (key: string): Promise<string | null> => {
+            return await cache.get<string>(key);
+          },
+          del: async (key: string) => {
+            await cache.del(key);
+          },
+        },
+        enableMail: true,
+        mailConfig: {
+          host: process.env.MAIL_HOST || 'localhost',
+          port: parseInt(process.env.MAIL_PORT || '587'),
+          secure: process.env.MAIL_SECURE === 'true',
+          auth: {
+            user: process.env.MAIL_USER || '',
+            pass: process.env.MAIL_PASS || '',
+          },
+          from: process.env.MAIL_FROM || 'noreply@example.com',
+        },
+        ttl: 300,
+        secret: process.env.EMAIL_CAPTCHA_SECRET || 'default-secret',
+      }),
+      inject: ['Cache'],
+    }),
     AuthModule.forRoot({
       userService: UserService,
       enableJwtGuard: false,

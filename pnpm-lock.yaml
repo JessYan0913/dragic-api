@@ -59,6 +59,12 @@ importers:
       '@dragic/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@dragic/email-captcha':
+        specifier: workspace:*
+        version: link:../../packages/email-captcha
+      '@dragic/image-captcha':
+        specifier: workspace:*
+        version: link:../../packages/image-captcha
       '@dragic/mail':
         specifier: workspace:*
         version: link:../../packages/mail
