@@ -2,7 +2,7 @@ import { AuthModule } from '@dragic/auth';
 import { Cache, CacheModule } from '@dragic/cache';
 import { DrizzleModule } from '@dragic/database';
 import { EmailCaptchaModule } from '@dragic/email-captcha';
-import { CaptchaModule, LocalImageLoader } from '@dragic/image-captcha';
+import { ImageCaptchaModule, LocalImageLoader } from '@dragic/image-captcha';
 import { MailModule } from '@dragic/mail';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -69,7 +69,7 @@ import { UserService } from './user/user.service';
       },
       from: process.env.MAIL_FROM || 'noreply@example.com',
     }),
-    CaptchaModule.forRootAsync({
+    ImageCaptchaModule.forRootAsync({
       useFactory: (cache: Cache) => ({
         storage: {
           set: async (key: string, value: string, ttl: number) => {

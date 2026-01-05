@@ -1,6 +1,8 @@
 import { Module, DynamicModule, Global } from '@nestjs/common';
-import { CaptchaService } from './captcha.service';
+import { Reflector } from '@nestjs/core';
+import { ImageCaptchaService } from './image-captcha.service';
 import { CaptchaConfig, Storage, ImageLoader } from './types';
+import { CaptchaGuard } from './guards';
 
 export interface CaptchaModuleOptions {
   storage: Storage;
@@ -17,7 +19,7 @@ export interface CaptchaModuleOptions {
 
 @Global()
 @Module({})
-export class CaptchaModule {
+export class ImageCaptchaModule {
   static forRoot(options: CaptchaModuleOptions): DynamicModule {
     const captchaConfig: CaptchaConfig = {
       storage: options.storage,
@@ -34,14 +36,15 @@ export class CaptchaModule {
 
     return {
       global: true,
-      module: CaptchaModule,
+      module: ImageCaptchaModule,
       providers: [
         {
-          provide: CaptchaService,
-          useFactory: () => new CaptchaService(captchaConfig),
+          provide: ImageCaptchaService,
+          useFactory: () => new ImageCaptchaService(captchaConfig),
         },
+        Reflector,
       ],
-      exports: [CaptchaService],
+      exports: [ImageCaptchaService, CaptchaGuard],
     };
   }
 
@@ -51,13 +54,13 @@ export class CaptchaModule {
   }): DynamicModule {
     return {
       global: true,
-      module: CaptchaModule,
+      module: ImageCaptchaModule,
       providers: [
         {
-          provide: CaptchaService,
+          provide: ImageCaptchaService,
           useFactory: async (...args: any[]) => {
             const captchaOptions = await options.useFactory(...args);
-            return new CaptchaService({
+            return new ImageCaptchaService({
               storage: captchaOptions.storage,
               imageLoader: captchaOptions.imageLoader,
               defaultSize: captchaOptions.defaultSize || { width: 300, height: 200 },
@@ -72,8 +75,9 @@ export class CaptchaModule {
           },
           inject: options.inject || [],
         },
+        Reflector,
       ],
-      exports: [CaptchaService],
+      exports: [ImageCaptchaService, CaptchaGuard],
     };
   }
 }

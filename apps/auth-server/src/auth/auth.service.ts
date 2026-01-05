@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { UserService } from '../user/user.service';
 import { DrizzleService, users } from '@dragic/database';
-import { MailService, MailTemplate } from '@dragic/mail';
-import { welcomeTemplate } from './templates/welcome.template';
+import { EmailCaptchaService } from '@dragic/email-captcha';
+import { MailService } from '@dragic/mail';
+import { Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
+import { UserService } from '../user/user.service';
+import { welcomeTemplate } from './templates/welcome.template';
 
 @Injectable()
 export class AuthService {
@@ -11,15 +12,14 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly drizzle: DrizzleService,
     private readonly mailService: MailService,
+    private readonly emailCaptchaService: EmailCaptchaService,
   ) {}
 
-  async register(userData: { name: string; email: string; password: string }) {
+  async sendRegisterEmailCaptcah() {}
+
+  async register(payload: { name: string; email: string; password: string }) {
     // 检查邮箱是否已存在
-    const existingUser = await this.drizzle.db
-      .select()
-      .from(users)
-      .where(eq(users.email, userData.email))
-      .limit(1);
+    const existingUser = await this.drizzle.db.select().from(users).where(eq(users.email, payload.email)).limit(1);
 
     if (existingUser.length > 0) {
       throw new Error('Email already exists');
@@ -29,22 +29,18 @@ export class AuthService {
     const [newUser] = await this.drizzle.db
       .insert(users)
       .values({
-        name: userData.name,
-        email: userData.email,
-        password: userData.password, // 实际应用中应该加密
+        name: payload.name,
+        email: payload.email,
+        password: payload.password, // 实际应用中应该加密
       })
       .returning();
 
     // 发送欢迎邮件
     try {
-      await this.mailService.sendTemplate(
-        newUser.email,
-        welcomeTemplate,
-        {
-          name: newUser.name,
-          loginUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login`,
-        }
-      );
+      await this.mailService.sendTemplate(newUser.email, welcomeTemplate, {
+        name: newUser.name,
+        loginUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login`,
+      });
     } catch (error) {
       console.error('发送欢迎邮件失败:', error);
       // 不阻塞注册流程，只记录错误

@@ -21,8 +21,8 @@ interface TokenPayload {
 }
 
 @Injectable()
-export class CaptchaService implements CaptchaServiceInterface {
-  private readonly logger = new Logger(CaptchaService.name);
+export class ImageCaptchaService implements CaptchaServiceInterface {
+  private readonly logger = new Logger(ImageCaptchaService.name);
 
   constructor(private config: CaptchaConfig) {}
 

@@ -1,5 +1,6 @@
 // Image captcha module exports
-export * from './captcha.module';
-export * from './captcha.service';
+export * from './image-captcha.module';
+export * from './image-captcha.service';
 export * from './types';
 export * from './loaders/local-image';
+export * from './guards';

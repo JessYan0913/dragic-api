@@ -1,15 +1,51 @@
-import { Body, Controller, Post, HttpCode, HttpStatus, Inject } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SkipAuth } from '@dragic/auth';
+import { CaptchaGuard, CaptchaPurpose, ImageCaptchaService } from '@dragic/image-captcha';
+import { Body, Controller, HttpCode, HttpStatus, Inject, Post, UseGuards } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { AuthService } from './auth.service';
+import { CreateImageCaptchaDTO } from './dto/create-image-captcha.dto';
 import { LoginDTO } from './dto/login.dto';
 import { RegisterDTO } from './dto/register.dto';
+import { VerifyImageCaptchaDTO } from './dto/verify-image-captcha.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(@Inject('LocalAuthService') private readonly authService: any) {}
+  constructor(
+    @Inject('LocalAuthService') private readonly authService: AuthService,
+    private readonly imageCaptchaService: ImageCaptchaService,
+  ) {}
 
-  @Post('register')
+  @Post('/captcha')
+  @SkipAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '创建图片验证码' })
+  @ApiResponse({ status: 200, description: '创建成功' })
+  async createImageCaptcha(@Body() body: CreateImageCaptchaDTO) {
+    return this.imageCaptchaService.createCaptcha(body);
+  }
+
+  @Post('/captcha/verify')
+  @SkipAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '验证图片验证码' })
+  @ApiResponse({ status: 200, description: '验证成功' })
+  async verifyImageCaptcha(@Body() body: VerifyImageCaptchaDTO) {
+    return this.imageCaptchaService.verifyCaptcha(body);
+  }
+
+  @Post('/register/email/send')
+  @SkipAuth()
+  @UseGuards(CaptchaGuard)
+  @CaptchaPurpose('register')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: '发送注册邮箱验证码' })
+  @ApiResponse({ status: 201, description: '发送成功' })
+  async sendRegisterEmailCaptcah() {
+    return this.authService.sendRegisterEmailCaptcah();
+  }
+
+  @Post('/register')
   @SkipAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: '用户注册' })
@@ -18,7 +54,7 @@ export class AuthController {
     return this.authService.register(userData);
   }
 
-  @Post('login')
+  @Post('/login')
   @SkipAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '用户登录' })
@@ -27,7 +63,7 @@ export class AuthController {
     return this.authService.login(loginData.email, loginData.password);
   }
 
-  @Post('refresh')
+  @Post('/refresh')
   @SkipAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '刷新访问令牌' })
@@ -36,7 +72,7 @@ export class AuthController {
     return this.authService.refreshToken(refreshToken);
   }
 
-  @Post('logout')
+  @Post('/logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '用户登出' })
   @ApiResponse({ status: 200, description: '登出成功' })
