@@ -6,27 +6,23 @@ import {
   CaptchaTokenInvalidException, 
   CaptchaTokenExpiredException 
 } from './exceptions';
+import { ImageCaptchaService } from '../image-captcha.service';
 
 @Injectable()
 export class CaptchaGuard implements CanActivate {
   constructor(
-    private readonly imageCaptchaService: any,
+    private readonly imageCaptchaService: ImageCaptchaService,
     private readonly reflector: Reflector,
-    private readonly options: {
-      headerName?: string;
-      cookieName?: string;
-      defaultPurpose?: string;
-    } = {}
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const purpose = this.reflector.get<string>(CAPTCHA_PURPOSE_KEY, context.getHandler()) || 
                    this.reflector.get<string>(CAPTCHA_PURPOSE_KEY, context.getClass()) ||
-                   this.options.defaultPurpose || 'default';
+                   'default';
 
     const request = context.switchToHttp().getRequest();
-    const headerName = this.options.headerName || 'x-captcha-token';
-    const cookieName = this.options.cookieName || 'captcha_token';
+    const headerName = 'x-captcha-token';
+    const cookieName = 'captcha_token';
     
     // 优先从请求头获取 token，其次从 Cookie 获取
     let token = request.headers[headerName];
