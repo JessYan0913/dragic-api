@@ -1,7 +1,8 @@
 import { SkipAuth } from '@dragic/auth';
 import { CaptchaGuard, CaptchaPurpose, ImageCaptchaService } from '@dragic/image-captcha';
-import { Body, Controller, HttpCode, HttpStatus, Inject, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Inject, Post, UseGuards, Res } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { CreateImageCaptchaDTO } from './dto/create-image-captcha.dto';
 import { LoginDTO } from './dto/login.dto';
@@ -30,8 +31,18 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '验证图片验证码' })
   @ApiResponse({ status: 200, description: '验证成功' })
-  async verifyImageCaptcha(@Body() body: VerifyImageCaptchaDTO) {
-    return this.imageCaptchaService.verifyCaptcha(body);
+  async verifyImageCaptcha(@Body() body: VerifyImageCaptchaDTO, @Res({ passthrough: true }) response: Response) {
+    const result = await this.imageCaptchaService.verifyCaptcha(body);
+    
+    // 设置 Cookie，浏览器会自动携带
+    response.cookie('captcha_token', result.token, {
+      httpOnly: false, // 允许前端访问
+      secure: process.env.NODE_ENV === 'production', // 生产环境使用 HTTPS
+      sameSite: 'lax',
+      maxAge: 5 * 60 * 1000, // 5分钟过期
+    });
+    
+    return { id: result.id, message: '验证成功' };
   }
 
   @Post('/register/email/send')

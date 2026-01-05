@@ -53,17 +53,22 @@ export class AppModule {}
 客户端需要在请求中包含以下头部：
 
 ```
+# 方式1：请求头（手动设置）
 x-captcha-id: captcha_id_from_verification
 x-captcha-token: jwt_token_from_verification
+
+# 方式2：Cookie（自动携带）
+# 验证成功后自动设置，浏览器会自动携带
 ```
 
 ### 4. 验证流程
 
 1. 客户端调用验证码创建接口获取验证码图片
 2. 客户端完成验证码验证，获得 captcha ID 和 JWT token
-3. 客户端在需要验证的接口请求中携带上述请求头
-4. Guard 验证 token 的有效性和用途
-5. 验证通过则允许访问，否则返回 401 错误
+3. **验证成功后，token 自动设置到 Cookie 中**
+4. 客户端在后续需要验证的接口请求中，**浏览器自动携带 Cookie**
+5. Guard 优先检查请求头，其次检查 Cookie 中的 token
+6. 验证通过则允许访问，否则返回 401 错误
 
 ## 异常类型
 
@@ -76,6 +81,20 @@ x-captcha-token: jwt_token_from_verification
 ```typescript
 interface CaptchaGuardOptions {
   headerName?: string;        // 自定义 token 请求头名称，默认 'x-captcha-token'
+  cookieName?: string;        // 自定义 Cookie 名称，默认 'captcha_token'
   defaultPurpose?: string;    // 默认验证码用途，默认 'default'
 }
+```
+
+### 6. Cookie 配置
+
+验证成功后自动设置的 Cookie 配置：
+
+```typescript
+response.cookie('captcha_token', result.token, {
+  httpOnly: false,           // 允许前端访问
+  secure: process.env.NODE_ENV === 'production', // 生产环境使用 HTTPS
+  sameSite: 'lax',           // CSRF 防护
+  maxAge: 5 * 60 * 1000,     // 5分钟过期
+});
 ```
