@@ -1,6 +1,5 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { CaptchaError, CaptchaNotFoundError, ValidationError, StorageError } from '@dragic/image-captcha';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -15,26 +14,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     let message = 'Internal server error';
     let code = 'INTERNAL_SERVER_ERROR';
 
-    // 处理验证码异常
-    if (exception instanceof CaptchaNotFoundError) {
-      status = HttpStatus.NOT_FOUND;
-      code = 'CAPTCHA_NOT_FOUND';
-      message = exception.message;
-    } else if (exception instanceof ValidationError) {
-      status = HttpStatus.BAD_REQUEST;
-      code = 'VALIDATION_ERROR';
-      message = exception.message;
-    } else if (exception instanceof StorageError) {
-      status = HttpStatus.INTERNAL_SERVER_ERROR;
-      code = 'STORAGE_ERROR';
-      message = exception.message;
-    } else if (exception instanceof CaptchaError) {
-      status = HttpStatus.BAD_REQUEST;
-      code = exception.code || 'CAPTCHA_ERROR';
-      message = exception.message;
-    }
     // 处理 NestJS HTTP 异常
-    else if (exception instanceof HttpException) {
+    if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
       
@@ -69,6 +50,23 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       } else if (exception.message.includes('forbidden') || exception.message.includes('禁止')) {
         code = 'FORBIDDEN';
         status = HttpStatus.FORBIDDEN;
+      }
+      
+      // 处理验证码相关异常（通过错误消息识别）
+      if (exception.message.includes('captcha') || exception.message.includes('验证码')) {
+        if (exception.message.includes('not found') || exception.message.includes('不存在')) {
+          code = 'CAPTCHA_NOT_FOUND';
+          status = HttpStatus.NOT_FOUND;
+        } else if (exception.message.includes('invalid') || exception.message.includes('验证失败')) {
+          code = 'CAPTCHA_INVALID';
+          status = HttpStatus.BAD_REQUEST;
+        } else if (exception.message.includes('storage') || exception.message.includes('存储')) {
+          code = 'CAPTCHA_STORAGE_ERROR';
+          status = HttpStatus.INTERNAL_SERVER_ERROR;
+        } else {
+          code = 'CAPTCHA_ERROR';
+          status = HttpStatus.BAD_REQUEST;
+        }
       }
     }
     // 处理未知异常
