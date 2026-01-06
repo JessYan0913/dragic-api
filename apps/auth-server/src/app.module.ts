@@ -36,7 +36,15 @@ import { UserService } from './user/user.service';
                 }
               : {
                   target: 'pino-pretty',
-                  options: { singleLine: true },
+                  options: { 
+                    singleLine: true,
+                    translateTime: 'HH:MM:ss Z',
+                    ignore: 'pid,hostname',
+                    colorize: true,
+                    messageFormat: '{msg}',
+                    encoding: 'utf8',
+                    timestampKey: 'time',
+                  },
                 },
             level: isProduction ? 'info' : 'debug',
           },

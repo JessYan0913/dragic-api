@@ -57,7 +57,8 @@ export class ImageCaptchaService implements CaptchaServiceInterface {
       this.logger.log(`验证码数据已存储，ID: ${id}, TTL: ${this.config.ttl}秒`);
 
       const bgMime = 'image/jpeg';
-      const puzzleMime = 'image/svg+xml';
+      const puzzleMime = 'image/webp';
+
       const bgUrl = `data:${bgMime};base64,${puzzle.bg.toString('base64')}`;
       const puzzleUrl = `data:${puzzleMime};base64,${puzzle.puzzle.toString('base64')}`;
 

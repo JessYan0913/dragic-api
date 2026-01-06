@@ -4,3 +4,4 @@ export * from './image-captcha.service';
 export * from './types';
 export * from './loaders/local-image';
 export * from './guards';
+export * from './core/errors';

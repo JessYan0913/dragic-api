@@ -1,4 +1,5 @@
-import sharp from 'sharp';
+import { createCanvas, loadImage } from '@napi-rs/canvas';
+import { drawPuzzle, getRandomPoints } from 'create-puzzle';
 
 function randomInt(min: number, max: number) {
   if (max < min) return min;
@@ -31,31 +32,15 @@ function computeDrawRect(origW: number, origH: number, targetW: number, targetH:
   return { dx, dy, dw, dh, sx: 0, sy: 0, sw: origW, sh: origH };
 }
 
-function generatePuzzlePath(width: number, height: number, margin: number = 2): string {
-  const r = 8; // 圆角半径
-  const bump = 15; // 凸起/凹陷大小
-  
-  return `
-    M ${margin} ${margin + r}
-    Q ${margin} ${margin} ${margin + r} ${margin}
-    L ${width/2 - bump/2} ${margin}
-    Q ${width/2 - bump/4} ${margin - bump/3} ${width/2} ${margin - bump/2}
-    Q ${width/2 + bump/4} ${margin - bump/3} ${width/2 + bump/2} ${margin}
-    L ${width - margin - r} ${margin}
-    Q ${width - margin} ${margin} ${width - margin} ${margin + r}
-    L ${width - margin} ${height - margin - r}
-    Q ${width - margin} ${height - margin} ${width - margin - r} ${height - margin}
-    L ${width/2 + bump/2} ${height - margin}
-    Q ${width/2 + bump/4} ${height + bump/3} ${width/2} ${height + bump/2}
-    Q ${width/2 - bump/4} ${height + bump/3} ${width/2 - bump/2} ${height - margin}
-    L ${margin + r} ${height - margin}
-    Q ${margin} ${height - margin} ${margin} ${height - margin - r}
-    Z
-  `;
-}
-
 export async function createPuzzle(options: PuzzleOptions): Promise<PuzzleResult> {
   const { imgUrl, bgWidth = 360, bgHeight = 200, width = 60, height = 60, x: outX } = options;
+
+  const borderWidth = 1;
+  const borderColor = 'rgba(255,255,255,0.7)';
+  const fillColor = 'rgba(255,255,255,0.7)';
+  const margin = 2;
+  const quality = 80;
+  const bgOffset = [0, 0];
 
   const maxOffsetX = bgWidth - width;
   let x = typeof outX === 'undefined' ? randomInt(width, Math.max(width, maxOffsetX)) : outX || 0;
@@ -65,57 +50,42 @@ export async function createPuzzle(options: PuzzleOptions): Promise<PuzzleResult
   const maxOffsetY = bgHeight - height;
   let y = randomInt(0, Math.max(0, maxOffsetY));
 
-  // Load and process background image
-  const image = sharp(imgUrl);
-  const metadata = await image.metadata();
-  
-  // Resize image to fit background
-  const { dx, dy, dw, dh } = computeDrawRect(
-    metadata.width || bgWidth,
-    metadata.height || bgHeight,
-    bgWidth,
-    bgHeight
-  );
+  const originImg = await loadImage(imgUrl);
+  const origW = originImg.width;
+  const origH = originImg.height;
 
-  // Create background with puzzle piece cut out
-  const bgSvg = `
-    <svg width="${bgWidth}" height="${bgHeight}">
-      <defs>
-        <mask id="puzzleMask">
-          <rect width="100%" height="100%" fill="white"/>
-          <path d="${generatePuzzlePath(width, height).replace(/M/g, `M ${x} ${y} l`)}" fill="black"/>
-        </mask>
-      </defs>
-      <foreignObject width="${bgWidth}" height="${bgHeight}" mask="url(#puzzleMask)">
-        <img src="data:image/jpeg;base64,${(await image.resize(dw, dh).toBuffer()).toString('base64')}" 
-             style="position: absolute; left: ${dx}px; top: ${dy}px; width: ${dw}px; height: ${dh}px;"/>
-      </foreignObject>
-    </svg>
-  `;
+  const points = getRandomPoints(undefined);
 
-  // Create puzzle piece
-  const puzzleSvg = `
-    <svg width="${width}" height="${bgHeight}">
-      <defs>
-        <clipPath id="puzzleClip">
-          <path d="${generatePuzzlePath(width, height)}"/>
-        </clipPath>
-      </defs>
-      <g clip-path="url(#puzzleClip)">
-        <rect x="${-x}" y="${-y}" width="${bgWidth}" height="${bgHeight}" 
-              fill="url(#bgImage)" stroke="rgba(255,255,255,0.7)" stroke-width="1"/>
-      </g>
-      <defs>
-        <pattern id="bgImage" x="0" y="0" width="100%" height="100%">
-          <image href="data:image/jpeg;base64,${(await image.resize(dw, dh).toBuffer()).toString('base64')}" 
-                 x="${dx}" y="${dy}" width="${dw}" height="${dh}"/>
-        </pattern>
-      </defs>
-    </svg>
-  `;
+  const bgCanvas = createCanvas(bgWidth, bgHeight);
+  const bgCtx = bgCanvas.getContext('2d');
+  bgCtx.clearRect(0, 0, bgWidth, bgHeight);
 
-  const bgBuffer = Buffer.from(bgSvg);
-  const puzzleBuffer = Buffer.from(puzzleSvg);
+  const { dx, dy, dw, dh, sx, sy, sw, sh } = computeDrawRect(origW, origH, bgWidth, bgHeight);
+  bgCtx.drawImage(originImg, sx + bgOffset[0], sy + bgOffset[1], sw, sh, dx, dy, dw, dh);
+
+  const puzzleCanvas = createCanvas(width, bgHeight);
+  const puzzleCtx = puzzleCanvas.getContext('2d');
+  puzzleCtx.strokeStyle = borderColor;
+  puzzleCtx.lineWidth = borderWidth;
+  puzzleCtx.clearRect(0, 0, width, bgHeight);
+  drawPuzzle(puzzleCtx as any, { x: 0, y, w: width, h: height, points: points as any, margin });
+  puzzleCtx.clip();
+  puzzleCtx.drawImage(bgCanvas, x, y, width, height, 0, y, width, height);
+
+  const maskCanvas = createCanvas(width, height);
+  const maskCtx = maskCanvas.getContext('2d');
+  maskCtx.clearRect(0, 0, width, height);
+  maskCtx.fillStyle = fillColor;
+  maskCtx.fillRect(0, 0, width, height);
+
+  bgCtx.strokeStyle = borderColor;
+  bgCtx.lineWidth = borderWidth;
+  drawPuzzle(bgCtx as any, { x, y, w: width, h: height, points: points as any, margin });
+  bgCtx.clip();
+  bgCtx.drawImage(maskCanvas, x, y, width, height);
+
+  const puzzleBuffer = await puzzleCanvas.encode('webp', quality);
+  const bgBuffer = await bgCanvas.encode('jpeg');
 
   return { bg: bgBuffer, puzzle: puzzleBuffer, x, y };
 }
