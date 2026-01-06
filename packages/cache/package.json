@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@vercel/kv": "^3.0.0",
+    "@dragic/database": "workspace:*",
+    "drizzle-orm": "^0.44.4",
     "ioredis": "^5.4.1",
     "redis": "^4.7.1"
   },
