@@ -1,4 +1,5 @@
 import { SkipAuth } from '@dragic/auth';
+import { EmailCaptchaService } from '@dragic/email-captcha';
 import { CaptchaGuard, CaptchaPurpose, ImageCaptchaService } from '@dragic/image-captcha';
 import { Body, Controller, HttpCode, HttpStatus, Inject, Post, Res, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -7,7 +8,9 @@ import { AuthService } from './auth.service';
 import { CreateImageCaptchaDTO } from './dto/create-image-captcha.dto';
 import { LoginDTO } from './dto/login.dto';
 import { RegisterDTO } from './dto/register.dto';
+import { SendRegisterEmailCaptchaDTO } from './dto/send-register-email-captcha.dto';
 import { VerifyImageCaptchaDTO } from './dto/verify-image-captcha.dto';
+import { SendRegisterEmailCaptchaVO } from './vo/send-register-email-captcha.dto.vo';
 import { VerifyImageCaptchaVO } from './vo/verify-image-captcha.vo';
 
 @ApiTags('Authentication')
@@ -16,6 +19,7 @@ export class AuthController {
   constructor(
     @Inject('LocalAuthService') private readonly authService: AuthService,
     private readonly imageCaptchaService: ImageCaptchaService,
+    private readonly emailCaptchaService: EmailCaptchaService,
   ) {}
 
   @Post('/captcha')
@@ -56,8 +60,13 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: '发送注册邮箱验证码' })
   @ApiResponse({ status: 201, description: '发送成功' })
-  async sendRegisterEmailCaptcah() {
-    return this.authService.sendRegisterEmailCaptcah();
+  async sendRegisterEmailCaptcah(@Body() body: SendRegisterEmailCaptchaDTO): Promise<SendRegisterEmailCaptchaVO> {
+    return this.emailCaptchaService.sendCaptcha({
+      purpose: 'register',
+      action: '注册账号',
+      text: '您正在注册账号，请使用以下验证码完成验证',
+      ...body,
+    });
   }
 
   @Post('/register')

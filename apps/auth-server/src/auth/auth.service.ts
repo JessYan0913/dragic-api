@@ -1,5 +1,4 @@
 import { DrizzleService, users } from '@dragic/database';
-import { EmailCaptchaService } from '@dragic/email-captcha';
 import { MailService } from '@dragic/mail';
 import { Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
@@ -12,10 +11,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly drizzle: DrizzleService,
     private readonly mailService: MailService,
-    private readonly emailCaptchaService: EmailCaptchaService,
   ) {}
-
-  async sendRegisterEmailCaptcah() {}
 
   async register(payload: { name: string; email: string; password: string }) {
     // 检查邮箱是否已存在
