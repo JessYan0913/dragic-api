@@ -57,7 +57,7 @@ export class EmailCaptchaModule {
     return {
       global: true,
       module: EmailCaptchaModule,
-      imports: [MailModule],
+      imports: [],
       providers: [
         {
           provide: EmailCaptchaService,
