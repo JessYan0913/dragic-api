@@ -4,7 +4,25 @@
     "outDir": "./dist",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@dragic/auth": ["../../packages/auth/src"],
+      "@dragic/auth/*": ["../../packages/auth/src/*"],
+      "@dragic/cache": ["../../packages/cache/src"],
+      "@dragic/cache/*": ["../../packages/cache/src/*"],
+      "@dragic/common": ["../../packages/common/src"],
+      "@dragic/common/*": ["../../packages/common/src/*"],
+      "@dragic/database": ["../../packages/database/src"],
+      "@dragic/database/*": ["../../packages/database/src/*"],
+      "@dragic/mail": ["../../packages/mail/src"],
+      "@dragic/mail/*": ["../../packages/mail/src/*"],
+      "@dragic/email-captcha": ["../../packages/email-captcha/src"],
+      "@dragic/email-captcha/*": ["../../packages/email-captcha/src/*"],
+      "@dragic/image-captcha": ["../../packages/image-captcha/src"],
+      "@dragic/image-captcha/*": ["../../packages/image-captcha/src/*"],
+      "@dragic/queue": ["../../packages/queue/src"],
+      "@dragic/queue/*": ["../../packages/queue/src/*"],
+      "@dragic/storage": ["../../packages/storage/src"],
+      "@dragic/storage/*": ["../../packages/storage/src/*"]
     }
   },
   "include": ["src/**/*"],
