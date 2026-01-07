@@ -110,7 +110,7 @@ import { UserService } from './user/user.service';
             await cache.del(key);
           },
         },
-        enableMail: false,
+        enableMail: true,
         ttl: 300,
         secret: process.env.EMAIL_CAPTCHA_SECRET || 'default-secret',
       }),

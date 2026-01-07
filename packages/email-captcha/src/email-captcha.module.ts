@@ -1,7 +1,7 @@
-import { Module, DynamicModule, Global } from '@nestjs/common';
+import { MailConfig, MailModule, MailService } from '@dragic/mail';
+import { DynamicModule, Global, Module } from '@nestjs/common';
 import { EmailCaptchaService } from './email-captcha.service';
 import { EmailCaptchaConfig } from './types';
-import { MailConfig, MailModule } from '@dragic/mail';
 
 export interface EmailCaptchaModuleOptions {
   storage: {
@@ -43,7 +43,7 @@ export class EmailCaptchaModule {
         {
           provide: EmailCaptchaService,
           useFactory: (mailService?: any) => new EmailCaptchaService(emailCaptchaConfig, mailService),
-          inject: options.enableMail ? ['MailService'] : [],
+          inject: options.enableMail ? [MailService] : [],
         },
       ],
       exports: [EmailCaptchaService],
@@ -57,11 +57,11 @@ export class EmailCaptchaModule {
     return {
       global: true,
       module: EmailCaptchaModule,
-      imports: [],
+      imports: [MailModule],
       providers: [
         {
           provide: EmailCaptchaService,
-          useFactory: async (...args: any[]) => {
+          useFactory: async (mailService: any, ...args: any[]) => {
             const emailCaptchaOptions = await options.useFactory(...args);
             const emailCaptchaConfig: EmailCaptchaConfig = {
               storage: emailCaptchaOptions.storage,
@@ -70,15 +70,12 @@ export class EmailCaptchaModule {
               secret: emailCaptchaOptions.secret || 'default-secret-change-in-production',
             };
 
-            if (emailCaptchaOptions.enableMail) {
-              if (!emailCaptchaOptions.mailConfig) {
-                throw new Error('mailConfig must be provided when enableMail is true');
-              }
-            }
-
-            return new EmailCaptchaService(emailCaptchaConfig);
+            return new EmailCaptchaService(
+              emailCaptchaConfig,
+              emailCaptchaOptions.enableMail !== false ? mailService : undefined,
+            );
           },
-          inject: options.inject || [],
+          inject: [MailService, ...(options.inject || [])],
         },
       ],
       exports: [EmailCaptchaService],
